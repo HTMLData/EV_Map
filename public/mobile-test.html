@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>移动端连接测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .status {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .success { color: #52c41a; }
+        .error { color: #f5222d; }
+        .warning { color: #faad14; }
+        .info { color: #1890ff; }
+        .test-btn {
+            width: 100%;
+            padding: 12px;
+            background: #081c54;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+        .test-btn:hover {
+            background: #0a2468;
+        }
+        .log {
+            background: #f5f5f5;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>📱 移动端连接测试</h2>
+        
+        <div class="status">
+            <div id="connection-status" class="info">正在检测连接状态...</div>
+        </div>
+        
+        <button class="test-btn" onclick="testConnection()">🔄 重新测试连接</button>
+        <button class="test-btn" onclick="testAPI()">🌐 测试API连接</button>
+        <button class="test-btn" onclick="clearLog()">🗑️ 清除日志</button>
+        
+        <div class="log" id="log"></div>
+        
+        <div class="status">
+            <h3>📋 故障排除指南</h3>
+            <ul style="text-align: left; font-size: 14px;">
+                <li>确保手机和电脑在同一WiFi网络</li>
+                <li>检查防火墙是否阻止3000端口</li>
+                <li>尝试清除浏览器缓存</li>
+                <li>重启WiFi连接</li>
+                <li>关闭VPN或代理</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let logElement = document.getElementById('log');
+        let statusElement = document.getElementById('connection-status');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            logElement.innerHTML += `<div class="${type}">${logEntry}</div>`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        function clearLog() {
+            logElement.innerHTML = '';
+        }
+        
+        function updateStatus(message, type) {
+            statusElement.textContent = message;
+            statusElement.className = type;
+        }
+        
+        async function testConnection() {
+            log('开始测试连接...', 'info');
+            updateStatus('正在测试连接...', 'info');
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch('/api/test', {
+                    method: 'GET',
+                    timeout: 5000
+                });
+                const endTime = Date.now();
+                
+                if (response.ok) {
+                    log(`连接成功！响应时间: ${endTime - startTime}ms`, 'success');
+                    updateStatus('✅ 连接正常', 'success');
+                } else {
+                    log(`连接失败: HTTP ${response.status}`, 'error');
+                    updateStatus('❌ 连接失败', 'error');
+                }
+            } catch (error) {
+                log(`连接错误: ${error.message}`, 'error');
+                updateStatus('❌ 连接超时', 'error');
+            }
+        }
+        
+        async function testAPI() {
+            log('测试API连接...', 'info');
+            
+            try {
+                const response = await fetch('/mock/stations.json');
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`API测试成功，获取到 ${data.length} 个充电桩数据`, 'success');
+                } else {
+                    log(`API测试失败: HTTP ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`API测试错误: ${error.message}`, 'error');
+            }
+        }
+        
+        // 页面加载时自动测试
+        window.addEventListener('load', () => {
+            log('页面加载完成', 'info');
+            setTimeout(testConnection, 1000);
+        });
+        
+        // 定期检查连接状态
+        setInterval(() => {
+            if (navigator.onLine) {
+                log('网络连接正常', 'success');
+            } else {
+                log('网络连接断开', 'error');
+                updateStatus('❌ 网络断开', 'error');
+            }
+        }, 30000);
+    </script>
+</body>
+</html>
