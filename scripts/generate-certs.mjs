@@ -1,8 +1,13 @@
 #!/usr/bin/env node
 
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+import { execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import readline from 'readline';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 console.log('🔐 正在生成自签名 SSL 证书...');
 
@@ -20,7 +25,6 @@ if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
   console.log('⚠️  证书已存在，是否重新生成？(y/N)');
   
   // 在 Node.js 中读取用户输入
-  const readline = require('readline');
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout

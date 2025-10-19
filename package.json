@@ -12,7 +12,7 @@
     "preview:https": "vite preview --host 0.0.0.0 --port 4173 --https",
     "clean": "rm -rf node_modules/.vite .vite dist && echo 'Vite缓存已清理'",
     "dev:clean": "npm run clean && npm run dev",
-    "generate-certs": "node scripts/generate-certs.js",
+    "generate-certs": "node scripts/generate-certs.cjs",
     "generate-certs:win": "generate-certs.bat",
     "generate-certs:unix": "./generate-certs.sh",
     "serve:https": "npm run build && npm run preview:https"
