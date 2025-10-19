@@ -12,7 +12,9 @@
     "preview:https": "vite preview --host 0.0.0.0 --port 4173 --https",
     "clean": "rm -rf node_modules/.vite .vite dist && echo 'Vite缓存已清理'",
     "dev:clean": "npm run clean && npm run dev",
-    "generate-certs": "./generate-certs.sh",
+    "generate-certs": "node -e \"process.platform === 'win32' ? require('child_process').exec('generate-certs.bat') : require('child_process').exec('./generate-certs.sh')\"",
+    "generate-certs:win": "generate-certs.bat",
+    "generate-certs:unix": "./generate-certs.sh",
     "serve:https": "npm run build && npm run preview:https"
   },
   "dependencies": {

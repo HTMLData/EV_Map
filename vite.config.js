@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
 import fs from 'fs'
+import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -17,10 +18,29 @@ export default defineConfig({
     port: 3000,
     open: true,
     cors: true, // 启用CORS
-    https: {
-      key: fs.readFileSync('./certs/localhost-key.pem'),
-      cert: fs.readFileSync('./certs/localhost.pem')
-    },
+    https: (() => {
+      try {
+        const keyPath = path.resolve(__dirname, 'certs', 'localhost-key.pem')
+        const certPath = path.resolve(__dirname, 'certs', 'localhost.pem')
+        
+        // 检查证书文件是否存在
+        if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+          return {
+            key: fs.readFileSync(keyPath),
+            cert: fs.readFileSync(certPath)
+          }
+        } else {
+          console.warn('⚠️  SSL 证书文件不存在，使用 HTTP 模式')
+          console.warn('💡 请运行以下命令生成证书:')
+          console.warn('   Windows: generate-certs.bat')
+          console.warn('   macOS/Linux: ./generate-certs.sh')
+          return false
+        }
+      } catch (error) {
+        console.warn('⚠️  SSL 证书加载失败，使用 HTTP 模式:', error.message)
+        return false
+      }
+    })(),
     hmr: {
       port: 3001, // HMR端口，避免冲突
       host: 'localhost'

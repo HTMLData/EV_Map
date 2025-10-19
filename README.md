@@ -90,6 +90,8 @@ npm install
 ```
 
 ### HTTPS 开发服务器
+
+#### macOS/Linux
 ```bash
 # 生成 SSL 证书（首次运行）
 npm run generate-certs
@@ -98,6 +100,19 @@ npm run generate-certs
 npm run dev:https
 # 或使用部署脚本
 ./deploy.sh dev
+```
+
+#### Windows
+```cmd
+# 生成 SSL 证书（首次运行）
+npm run generate-certs:win
+# 或直接运行
+generate-certs.bat
+
+# 启动 HTTPS 开发服务器
+npm run dev:https
+# 或使用部署脚本
+deploy.bat dev
 ```
 
 ### HTTP 开发服务器（传统方式）
