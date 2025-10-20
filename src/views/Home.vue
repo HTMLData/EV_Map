@@ -144,24 +144,51 @@
           </div>
 
         <!-- 排序和筛选栏 -->
-                <div class="sort-filter-bar" ref="sortFilterRef">
-          <van-dropdown-menu>
-            <van-dropdown-item 
-              v-model="sortType" 
-              :options="sortOptions" 
-              @change="handleSortChange"
-            />
-            <van-dropdown-item 
-              v-model="distanceFilter" 
-              :options="distanceOptions" 
-              @change="handleDistanceFilter"
-            />
-          </van-dropdown-menu>
+        <div class="sort-filter-bar" ref="sortFilterRef">
+          <div class="dropdown-section">
+            <!-- 自定义排序下拉菜单 -->
+            <div class="custom-dropdown" :class="{ 'active': showSortDropdown }">
+              <div class="dropdown-trigger" @click="toggleSortDropdown">
+                <span>{{ getSortText(sortType) }}</span>
+                <van-icon name="arrow-down" :class="{ 'rotated': showSortDropdown }" />
+              </div>
+              <div class="dropdown-content" v-show="showSortDropdown">
+                <div 
+                  v-for="option in sortOptions" 
+                  :key="option.value"
+                  class="dropdown-item"
+                  :class="{ 'selected': sortType === option.value }"
+                  @click="selectSortOption(option.value)"
+                >
+                  {{ option.text }}
+                </div>
+              </div>
+            </div>
+
+            <!-- 自定义距离筛选下拉菜单 -->
+            <div class="custom-dropdown" :class="{ 'active': showDistanceDropdown }">
+              <div class="dropdown-trigger" @click="toggleDistanceDropdown">
+                <span>{{ getDistanceText(distanceFilter) }}</span>
+                <van-icon name="arrow-down" :class="{ 'rotated': showDistanceDropdown }" />
+              </div>
+              <div class="dropdown-content" v-show="showDistanceDropdown">
+                <div 
+                  v-for="option in distanceOptions" 
+                  :key="option.value"
+                  class="dropdown-item"
+                  :class="{ 'selected': distanceFilter === option.value }"
+                  @click="selectDistanceOption(option.value)"
+                >
+                  {{ option.text }}
+                </div>
+              </div>
+            </div>
+          </div>
           <button class="filter-btn" @click="goToFilterPage">
             <van-icon name="filter-o" />
             筛选
           </button>
-            </div>
+        </div>
 
         <!-- 站点列表项 -->
                 <div class="station-items scrollable-list" ref="stationListRef">
@@ -280,6 +307,10 @@ const chargeStatusFilter = ref('all')
 // 排序选项
 const sortType = ref('distance')
 const distanceFilter = ref('all')
+
+// 下拉菜单状态
+const showSortDropdown = ref(false)
+const showDistanceDropdown = ref(false)
 
 const chargeTypes = [
   { label: '全部', value: 'all' },
@@ -712,6 +743,37 @@ const handleDistanceFilter = (value) => {
   distanceFilter.value = value
 }
 
+// 自定义下拉菜单方法
+const toggleSortDropdown = () => {
+  showSortDropdown.value = !showSortDropdown.value
+  showDistanceDropdown.value = false // 关闭另一个下拉菜单
+}
+
+const toggleDistanceDropdown = () => {
+  showDistanceDropdown.value = !showDistanceDropdown.value
+  showSortDropdown.value = false // 关闭另一个下拉菜单
+}
+
+const selectSortOption = (value) => {
+  sortType.value = value
+  showSortDropdown.value = false
+}
+
+const selectDistanceOption = (value) => {
+  distanceFilter.value = value
+  showDistanceDropdown.value = false
+}
+
+const getSortText = (value) => {
+  const option = sortOptions.find(opt => opt.value === value)
+  return option ? option.text : '距离优先'
+}
+
+const getDistanceText = (value) => {
+  const option = distanceOptions.find(opt => opt.value === value)
+  return option ? option.text : '不限'
+}
+
 const sendToCar = (station) => {
   // 实现发送到车的逻辑
 }
@@ -796,6 +858,17 @@ onMounted(async () => {
     // 清除query，避免再次触发
     router.replace({ path: route.path })
   }
+
+  // 监听点击外部关闭搜索面板和下拉菜单
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-container') && !e.target.closest('.floating-search')) {
+      showSearchPanel.value = false
+    }
+    if (!e.target.closest('.custom-dropdown')) {
+      showSortDropdown.value = false
+      showDistanceDropdown.value = false
+    }
+  })
   
   // 调试信息：显示距离计算状态
   if (stationStore.userLocation) {
@@ -948,6 +1021,11 @@ const handleRoutePlanning = async () => {
   -webkit-touch-callout: none; /* 禁用iOS长按菜单 */
   -webkit-user-select: none; /* 禁用文本选择 */
   user-select: none;
+}
+
+/* 排序筛选栏允许下拉菜单显示 */
+.sort-filter-bar {
+  overflow: visible !important;
 }
 
 /* 拖拽时的样式 */
@@ -1252,12 +1330,86 @@ const handleRoutePlanning = async () => {
   padding: 12px 0;
   border-bottom: 1px solid #f0f0f0;
   gap: 12px;
-  position: relative; /* 使子元素的 z-index 生效 */
+  position: relative;
+  z-index: 1200;
 }
 
-.sort-filter-bar .van-dropdown-menu {
+.dropdown-section {
   flex: 1;
-  z-index: 0; /* 避免覆盖右侧“筛选”按钮的点击区域 */
+  display: flex;
+  gap: 8px;
+}
+
+/* 自定义下拉菜单样式 */
+.custom-dropdown {
+  position: relative;
+  flex: 1;
+}
+
+.dropdown-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #333;
+  transition: all 0.2s ease;
+}
+
+.dropdown-trigger:hover {
+  background: #e9ecef;
+  border-color: #dee2e6;
+}
+
+.dropdown-trigger .van-icon {
+  transition: transform 0.2s ease;
+  font-size: 12px;
+  color: #666;
+}
+
+.dropdown-trigger .van-icon.rotated {
+  transform: rotate(180deg);
+}
+
+.dropdown-content {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1300;
+  margin-top: 2px;
+  overflow: hidden;
+}
+
+.dropdown-item {
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.dropdown-item:hover {
+  background: #f8f9fa;
+}
+
+.dropdown-item.selected {
+  background: #e3f2fd;
+  color: #1976d2;
+  font-weight: 500;
 }
 
 .filter-btn {
@@ -1270,9 +1422,13 @@ const handleRoutePlanning = async () => {
   border-radius: 6px;
   color: #666;
   font-size: 14px;
-  position: relative;
-  z-index: 1; /* 确保高于下拉菜单容器 */
   cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+  background: #e9ecef;
 }
 
 /* 站点列表项 */
