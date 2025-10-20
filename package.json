@@ -17,7 +17,6 @@
     "generate-certs:win-enhanced": "generate-certs-enhanced.bat",
     "generate-certs:unix": "./generate-certs.sh",
     "start:http": "start-http.bat",
-    "quick-start": "node -e \"const os = require('os'); const { execSync } = require('child_process'); if (os.platform() === 'win32') { execSync('quick-start.bat', {stdio: 'inherit'}); } else { execSync('./quick-start.sh', {stdio: 'inherit'}); }\"",
     "serve:https": "npm run build && npm run preview:https"
   },
   "dependencies": {

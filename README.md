@@ -33,20 +33,7 @@
 - Node.js >= 16.0.0
 - npm >= 8.0.0
 
-### 一键启动（推荐）
-```bash
-# 自动检测系统并启动 HTTPS 服务
-npm run quick-start
-
-# 或直接运行脚本
-# macOS/Linux
-./quick-start.sh
-
-# Windows
-quick-start.bat
-```
-
-### 手动安装
+### 标准启动流程
 ```bash
 # 1. 安装依赖
 npm install
@@ -56,6 +43,15 @@ npm run generate-certs
 
 # 3. 启动 HTTPS 服务
 npm run dev:https
+```
+
+### 快速启动（可选）
+```bash
+# macOS/Linux
+./generate-certs.sh && npm run dev:https
+
+# Windows
+generate-certs.bat && npm run dev:https
 ```
 
 ## 🖥️ macOS/Linux 部署指南
