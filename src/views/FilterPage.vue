@@ -25,9 +25,9 @@
               :key="type.value"
               class="filter-chip"
               :class="{ 
-                active: stationStore.filterOptions.type === type.value
+                active: stationStore.filterOptions.chargeType === type.value
               }"
-              @click="setFilter('type', type.value)"
+              @click="setFilter('chargeType', type.value)"
             >
               {{ type.label }}
             </div>
@@ -42,9 +42,9 @@
               :key="status.value"
               class="filter-chip"
               :class="{ 
-                active: stationStore.filterOptions.status === status.value
+                active: stationStore.filterOptions.openStatus === status.value
               }"
-              @click="setFilter('status', status.value)"
+              @click="setFilter('openStatus', status.value)"
             >
               {{ status.label }}
             </div>
@@ -91,15 +91,15 @@
         <div class="station-list">
           <div
             v-for="(station, index) in searchResults"
-            :key="station.id"
+            :key="station.stationId"
             class="volkswagen-station-item"
             @click="selectStation(station)"
           >
             <div class="station-info">
               <div class="station-header">
-                <h3 class="station-name">{{ station.name }}</h3>
-                <div class="status-badge" :class="getStatusClass(station.status)">
-                  {{ station.status }}
+                <h3 class="station-name">{{ station.stationName }}</h3>
+                <div class="status-badge" :class="getStatusClass(station.openStatus)">
+                  {{ station.openStatus === 1 ? '营业中' : '暂停营业' }}
                 </div>
               </div>
               <p class="station-address">{{ station.address }}</p>
@@ -110,21 +110,17 @@
                 </div>
                 <div class="detail-item">
                   <span class="label">价格</span>
-                  <span class="value">¥{{ station.price }}/kWh</span>
+                  <span class="value">¥{{ station.totalCostPrice }}/kWh</span>
                 </div>
                 <div class="detail-item">
                   <span class="label">可用</span>
-                  <span class="value">{{ station.availablePorts }}/{{ station.totalPorts }}</span>
+                  <span class="value">{{ station.quickAvailableNum + station.slowAvailableNum }}/{{ station.quickChargeNum + station.slowChargeNum }}</span>
                 </div>
               </div>
               <div class="station-features">
-                <span
-                  v-for="(feature, index) in station.features.slice(0, 3)"
-                  :key="index"
-                  class="feature-tag"
-                >
-                  {{ feature }}
-                </span>
+                <span class="feature-tag">{{ station.brandName }}</span>
+                <span class="feature-tag">快充{{ station.quickAvailableNum }}/{{ station.quickChargeNum }}</span>
+                <span class="feature-tag">慢充{{ station.slowAvailableNum }}/{{ station.slowChargeNum }}</span>
               </div>
             </div>
           </div>
@@ -151,15 +147,14 @@ const searchQuery = ref('')
 // 筛选选项
 const chargeTypes = [
   { label: '全部', value: 'all' },
-  { label: '快充', value: '快充' },
-  { label: '慢充', value: '慢充' }
+  { label: '快充', value: 'quick' },
+  { label: '慢充', value: 'slow' }
 ]
 
 const chargeStatuses = [
   { label: '全部', value: 'all' },
-  { label: '空闲', value: '空闲' },
-  { label: '部分空闲', value: '部分空闲' },
-  { label: '繁忙', value: '繁忙' }
+  { label: '营业中', value: '1' },
+  { label: '暂停营业', value: '0' }
 ]
 
 const sortOptions = [
@@ -170,13 +165,13 @@ const sortOptions = [
 // 计算搜索结果
 const searchResults = computed(() => {
   let results = stationStore.filteredStations
-  
+
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     results = results.filter(station => 
-      station.name.toLowerCase().includes(query) ||
+      station.stationName.toLowerCase().includes(query) ||
       station.address.toLowerCase().includes(query) ||
-      station.operator.toLowerCase().includes(query)
+      (station.brandName || '').toLowerCase().includes(query)
     )
   }
   
@@ -190,7 +185,7 @@ const goBack = () => {
 
 const selectStation = (station) => {
   businessStore.selectStation(station)
-  router.push(`/station/${station.id}`)
+  router.push(`/station/${station.stationId}`)
 }
 
 const setFilter = (type, value) => {

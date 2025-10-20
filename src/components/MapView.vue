@@ -16,10 +16,7 @@
     <!-- 地图容器 -->
     <div id="map" ref="mapContainer" v-show="!mapLoading && !mapError"></div>
     
-    <!-- 定位按钮 -->
-    <div class="location-btn" @click="locateUser" @touchstart="handleTouchStart" @touchend="handleTouchEnd" v-show="!mapLoading && !mapError">
-      <img src="/images/target-icon.svg" alt="定位" class="location-icon" />
-    </div>
+    
     
     <!-- 清除路线按钮 -->
     <div class="clear-route-btn" @click="clearRoute" v-show="routePolyline && !mapLoading && !mapError">
@@ -51,7 +48,7 @@ const isMobile = () => {
   return window.innerWidth <= 768
 }
 
-const emit = defineEmits(['select-station'])
+const emit = defineEmits(['select-station', 'map-click'])
 
 const mapContainer = ref(null)
 let map = null
@@ -108,11 +105,10 @@ const initMap = () => {
       map.addControl(scale)
     })
     
-    // 2. 控制罗盘控件
-    window.AMap.plugin('AMap.ControlBar', () => {
-      const controlBar = new window.AMap.ControlBar(amapConfig.controls.controlBar)
-      map.addControl(controlBar)
-    })
+    // 隐藏默认指南针
+    const styleEl = document.createElement('style')
+    styleEl.innerHTML = `.amap-controls .amap-compass{display:none!important;}`
+    document.head.appendChild(styleEl)
     
     // 3. 定位控件（使用高德地图定位服务）
     window.AMap.plugin('AMap.Geolocation', () => {
@@ -132,10 +128,7 @@ const initMap = () => {
     // })
     
     // 5. 图层切换控件
-    window.AMap.plugin('AMap.MapType', () => {
-      const mapType = new window.AMap.MapType(amapConfig.controls.mapType)
-      map.addControl(mapType)
-    })
+    // 移除图层切换控件（不加载）
 
     // 6. 驾车路线规划服务
     window.AMap.plugin('AMap.Driving', () => {
@@ -157,6 +150,7 @@ const initMap = () => {
       
       // 将路线规划函数暴露到全局
       window.planRouteToStation = planRouteToStation
+      window.openAmapNavigation = openAmapNavigation
       window.clearRoute = clearRoute
       
       // 自动执行定位（不显示toast提示）
@@ -170,6 +164,11 @@ const initMap = () => {
       console.error('地图加载错误:', error)
       mapError.value = '地图加载错误'
       mapLoading.value = false
+    })
+
+    // 地图空白区域点击事件（用于通知父组件收起列表）
+    map.on('click', () => {
+      emit('map-click')
     })
   }
 }
@@ -214,6 +213,8 @@ const renderMarkers = () => {
 
     markers.push(marker)
   })
+  
+  // 自定义指南针已移除
 
   // 将标记添加到地图
   if (markers.length > 0) {
@@ -223,6 +224,8 @@ const renderMarkers = () => {
     console.warn('没有标记被添加到地图')
   }
 }
+
+// 自定义指南针与图层控件已移除
 
 // 显示信息窗口
 const showInfoWindow = (station) => {
@@ -263,7 +266,7 @@ const showInfoWindow = (station) => {
           <button class="volkswagen-btn primary" onclick="window.goToStationDetail('${station.stationId}')">
             查看详情
           </button>
-          <button class="volkswagen-btn secondary" onclick="window.planRouteToStation('${station.stationId}')">
+          <button class="volkswagen-btn secondary" onclick="window.openAmapNavigation && window.openAmapNavigation('${station.stationId}')">
             导航前往
           </button>
         </div>
@@ -277,7 +280,7 @@ const showInfoWindow = (station) => {
   infoWindow.open(map, [station.lng, station.lat])
 }
 
-// 规划路线到指定充电桩 - 增强版本
+// 规划路线到指定充电桩 - 增强版本（保留供Web预览使用）
 const planRouteToStation = (stationId) => {
   console.log('🚗 开始规划路线，stationId:', stationId)
   
@@ -349,6 +352,42 @@ const planRouteToStation = (stationId) => {
     clearTimeout(timeoutId)
     console.error('💥 路线规划调用异常:', error)
     showRouteError('路线规划服务异常: ' + error.message)
+  }
+}
+
+// 唤起高德地图App进行导航（优先App，失败回退Web）
+const openAmapNavigation = (stationId) => {
+  const station = stationStore.getStationById(stationId)
+  if (!station) { showRouteError('未找到充电桩信息'); return }
+  if (!stationStore.userLocation) { showRouteError('请先定位获取当前位置'); return }
+
+  const sLat = stationStore.userLocation.latitude
+  const sLng = stationStore.userLocation.longitude
+  const dLat = station.lat
+  const dLng = station.lng
+  const name = encodeURIComponent(station.stationName || '目的地')
+
+  const ua = navigator.userAgent || ''
+  const isIOS = /iPhone|iPad|iPod/i.test(ua)
+  const isAndroid = /Android/i.test(ua)
+
+  const iosScheme = `iosamap://path?sourceApplication=EV_Map&slat=${sLat}&slon=${sLng}&dlat=${dLat}&dlon=${dLng}&dev=0&t=0` // t=0 驾车
+  const androidScheme = `androidamap://route?sourceApplication=EV_Map&slat=${sLat}&slon=${sLng}&dlat=${dLat}&dlon=${dLng}&dev=0&t=0`
+  const webFallback = `https://uri.amap.com/navigation?from=${sLng},${sLat},我的位置&to=${dLng},${dLat},${name}&mode=car&policy=1&src=EV_Map&callnative=1`
+
+  let url = webFallback
+  if (isIOS) url = iosScheme
+  else if (isAndroid) url = androidScheme
+
+  const openUrl = (u) => { window.location.href = u }
+  try {
+    openUrl(url)
+    // 1.5 秒内未唤起则回退Web
+    setTimeout(() => {
+      openUrl(webFallback)
+    }, 1500)
+  } catch (e) {
+    openUrl(webFallback)
   }
 }
 
@@ -1063,6 +1102,7 @@ const flyToStation = (station) => {
 defineExpose({
   locateUser,
   planRouteToStation,
+  openAmapNavigation,
   reloadMap,
   goToStationDetail,
   closeInfoWindow,
@@ -1083,34 +1123,10 @@ defineExpose({
   min-height: 500px;
 }
 
-.location-btn {
-  position: fixed; /* 改为固定定位 */
-  bottom: calc(100vh / 3); /* 屏幕下半三分之一位置 */
-  right: 20px;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%; /* 完全圆形 */
-  background: linear-gradient(135deg, rgba(8, 28, 84, 0.6) 0%, rgba(10, 36, 104, 0.6) 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 15px rgba(8, 28, 84, 0.3);
-  z-index: 1000;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-}
+/* 自定义简约指南针 */
+/* 自定义指南针样式已移除 */
 
-.location-icon {
-  width: 24px;
-  height: 24px;
-  filter: brightness(0) invert(1); /* 将SVG图标变为白色 */
-}
-
-.location-btn:hover {
-  background: linear-gradient(135deg, rgba(8, 28, 84, 0.8) 0%, rgba(10, 36, 104, 0.8) 100%);
-  transform: scale(1.05);
-}
+/* 移除原定位按钮样式 */
 
 .location-btn:active {
   transform: scale(0.95);

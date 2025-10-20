@@ -1,27 +1,6 @@
 <template>
   <div class="mobile-container">
-    <!-- 顶部搜索栏 -->
-    <div class="mobile-header">
-      <div class="search-container">
-        <van-search
-          v-model="searchQuery"
-          placeholder="搜索充电桩名称或地址"
-          @search="handleSearch"
-          @clear="handleClearSearch"
-          @input="handleSearchInput"
-          shape="round"
-          background="rgba(255, 255, 255, 0.95)"
-        />
-        </div>
-      <div class="header-actions">
-        <button class="action-btn" @click="toggleSearch">
-          <van-icon name="search" />
-        </button>
-        <button class="action-btn" @click="goToFilterPage">
-          <van-icon name="filter-o" />
-        </button>
-      </div>
-      </div>
+    
 
     <!-- 全屏地图 -->
     <div class="map-fullscreen">
@@ -29,7 +8,36 @@
         :stations="searchResults"
         :selected-station-id="selectedStationId"
         @select-station="handleStationSelect"
+        @map-click="onMapBlankClick"
         ref="mapRef"
+      />
+        </div>
+
+    <!-- 右侧浮动按钮：搜索 + 定位 -->
+    <button class="floating-search" @click="toggleSearchPanel" :style="searchButtonStyle">
+      <van-icon name="search" />
+    </button>
+    <button class="floating-locate" @click="locateUser" :style="locateButtonStyle">
+      <van-icon name="aim" />
+    </button>
+
+    <!-- 点击遮罩：点击任意处可关闭搜索面板 -->
+    <div v-if="showSearchPanel" class="floating-search-mask" @click="toggleSearchPanel"></div>
+
+    <!-- 搜索展开面板（定位按钮正上方） -->
+    <div v-if="showSearchPanel" class="floating-search-panel" @click.stop :style="searchPanelStyle">
+      <van-search
+        v-model="searchQuery"
+        placeholder="搜索充电桩名称或地址"
+        @search="handleSearch"
+        @clear="handleClearSearch"
+        @input="handleSearchInput"
+        shape="round"
+        background="#fff"
+        clearable
+        show-action
+        action-text="关闭"
+        @cancel="toggleSearchPanel"
       />
     </div>
 
@@ -47,21 +55,21 @@
            @touchend="handleCardTouchEnd"
            @touchcancel="handleCardTouchEnd">
         <div class="handle-bar"></div>
-        <div class="handle-text" v-if="cardCollapsed">上拉查看充电桩</div>
+        <div class="handle-text" v-if="cardCollapsed">上滑查看充电桩详情</div>
       </div>
 
       <!-- 收起预览区（下拉后显示前两条简要信息） -->
       <div class="collapsed-preview" v-if="cardCollapsed">
         <div class="collapsed-title">
           <van-icon name="location-o" />
-          <span>附近推荐</span>
+          <span>结果</span>
         </div>
         <div class="collapsed-items">
           <div 
             v-for="station in collapsedPreviewStations" 
             :key="station.stationId" 
             class="collapsed-item"
-            @click="expandFromPreview(station)"
+          @click="expandFromPreview(station)"
           >
             <div class="collapsed-item-left">
               <div class="collapsed-name">{{ station.stationName }}</div>
@@ -73,8 +81,9 @@
                 <span class="c-fast">快 {{ station.quickAvailableNum }}/{{ station.quickChargeNum }}</span>
                 <span class="c-slow" v-if="station.slowChargeNum > 0">慢 {{ station.slowAvailableNum }}/{{ station.slowChargeNum }}</span>
         </div>
-            </div>
                 </div>
+                </div>
+        <div v-if="searchQuery && collapsedPreviewStations.length === 0" class="collapsed-empty">未找到匹配站点</div>
               </div>
             </div>
             
@@ -119,12 +128,15 @@
             
       <!-- 站点列表 -->
       <div class="station-list" v-if="(!selectedStation || showStationList) && !cardCollapsed">
-        <div class="list-header">
+                <div class="list-header" ref="listHeaderRef">
           <div class="location-info">
             <van-icon name="location-o" />
             <span class="location-text">附近推荐</span>
               </div>
           <div class="list-actions">
+            <button class="action-btn" @click="refreshList" title="清除搜索并刷新">
+              <van-icon name="replay" />
+            </button>
             <button class="action-btn" @click="collapseCard">
               <van-icon name="cross" />
             </button>
@@ -132,7 +144,7 @@
           </div>
 
         <!-- 排序和筛选栏 -->
-        <div class="sort-filter-bar">
+                <div class="sort-filter-bar" ref="sortFilterRef">
           <van-dropdown-menu>
             <van-dropdown-item 
               v-model="sortType" 
@@ -152,13 +164,13 @@
             </div>
 
         <!-- 站点列表项 -->
-        <div class="station-items scrollable-list" ref="stationListRef">
+                <div class="station-items scrollable-list" ref="stationListRef">
           <div
             v-for="(station, index) in sortedStations"
             :key="station.stationId"
             class="station-item"
             :class="{ 'item-selected': selectedStationId === station.stationId }"
-            @click="selectStationFromList(station)"
+            @click="openStationFromList(station)"
           >
             <!-- 站点名称 -->
             <div class="item-title">
@@ -244,10 +256,14 @@ const businessStore = useBusinessStore()
 
 // 响应式数据
 const searchQuery = ref('')
+const showSearch = ref(false)
+const showSearchPanel = ref(false)
 const selectedStationId = ref(null)
 const selectedStation = ref(null)
 const mapRef = ref(null)
 const stationListRef = ref(null)
+const listHeaderRef = ref(null)
+const sortFilterRef = ref(null)
 const isMobile = ref(false)
 const showStationList = ref(false)
 const cardCollapsed = ref(true) // 默认关闭状态
@@ -263,7 +279,7 @@ const chargeStatusFilter = ref('all')
 
 // 排序选项
 const sortType = ref('distance')
-const distanceFilter = ref('3km')
+const distanceFilter = ref('all')
 
 const chargeTypes = [
   { label: '全部', value: 'all' },
@@ -284,6 +300,7 @@ const sortOptions = [
 ]
 
 const distanceOptions = [
+  { text: '不限', value: 'all' },
   { text: '1KM', value: '1km' },
   { text: '3KM', value: '3km' },
   { text: '5KM', value: '5km' },
@@ -314,7 +331,18 @@ const searchResults = computed(() => {
 // 计算排序后的站点列表
 const sortedStations = computed(() => {
   let results = [...searchResults.value]
-  
+
+  // 距离筛选（不限时不限制）
+  if (distanceFilter.value && distanceFilter.value !== 'all') {
+    const kmLimit = parseFloat(distanceFilter.value)
+    if (!Number.isNaN(kmLimit)) {
+      results = results.filter(station => {
+        const d = station.distance
+        return typeof d === 'number' && d <= kmLimit
+      })
+    }
+  }
+
   // 按排序类型排序
   switch (sortType.value) {
     case 'distance':
@@ -365,13 +393,30 @@ const handleSearchInput = () => {
   // 实时搜索逻辑
 }
 
-// 收起预览：前两条站点
+// 收起预览：
+// - 若有搜索词，展示最匹配的 1 条
+// - 否则展示附近推荐前 2 条
 const collapsedPreviewStations = computed(() => {
+  if (searchQuery.value && searchQuery.value.trim().length > 0) {
+    const best = sortedStations.value[0]
+    return best ? [best] : []
+  }
   return sortedStations.value.slice(0, 2)
 })
 
 // 从预览展开并聚焦站点
 const expandFromPreview = (station) => {
+  // 若处于检索模式，点击仅定位到该点，并保持底部栏收起
+  if (searchQuery.value && searchQuery.value.trim().length > 0) {
+    selectedStationId.value = station.stationId
+    selectedStation.value = station
+    businessStore.selectStation(station)
+    if (mapRef.value && mapRef.value.flyToStation) {
+      mapRef.value.flyToStation(station)
+    }
+    return
+  }
+  // 非检索模式：展开列表
   cardCollapsed.value = false
   showStationList.value = true
   selectedStation.value = null
@@ -385,6 +430,60 @@ const expandFromPreview = (station) => {
 const toggleSearch = () => {
   // 切换搜索状态
 }
+
+// 搜索/定位按钮随底部卡片拖拽的动态样式
+const searchButtonStyle = computed(() => {
+  const collapsedH = window.innerHeight * 0.1667
+  const expandedH = window.innerHeight * 0.75
+  const h = currentCardHeight.value
+  const gap = 12
+  // 初始固定：位于定位按钮之上 56px
+  const baseBottom = 20 + (window.innerHeight * 0.20) + 56
+  // 当列表上边框 + gap 超过基准点时才开始跟随
+  const threshold = baseBottom - gap
+  const borderBottom = h
+  const bottom = borderBottom + gap > threshold ? borderBottom + gap : baseBottom
+  return { bottom: bottom + 'px' }
+})
+
+const locateButtonStyle = computed(() => {
+  const collapsedH = window.innerHeight * 0.1667
+  const expandedH = window.innerHeight * 0.75
+  const h = currentCardHeight.value
+  const t = (h - collapsedH) / (expandedH - collapsedH) // 0(收起)~1(展开)
+  const opacity = String(Math.max(0, Math.min(1, 1 - t)))
+  // 定位按钮始终贴着列表上边框下方 12px（视觉更近），但保持在卡片区域外：这里固定使用收起时的原始位置
+  const baseBottom = 20 + (window.innerHeight * 0.20)
+  return { bottom: baseBottom + 'px', opacity }
+})
+
+// 计算当前底部卡片高度：跟随拖拽并夹在收起/展开之间
+const currentCardHeight = computed(() => {
+  const collapsedH = window.innerHeight * 0.1667
+  const expandedH = window.innerHeight * 0.75
+  let h = cardCollapsed.value ? collapsedH + Math.max(cardDragOffset.value, 0)
+                              : expandedH + Math.min(cardDragOffset.value, 0)
+  if (h < collapsedH) h = collapsedH
+  if (h > expandedH) h = expandedH
+  return h
+})
+
+// 列表内容区域的固定高度（避免因结果条数变化而抖动）
+const listContentHeight = computed(() => {
+  const expandedH = window.innerHeight * 0.75
+  const headerH = listHeaderRef.value ? listHeaderRef.value.offsetHeight : 56
+  const filterH = sortFilterRef.value ? sortFilterRef.value.offsetHeight : 54
+  const padding = 20 + 8 // station-list padding-bottom + station-items padding-top
+  return Math.max(120, Math.round(expandedH - headerH - filterH - padding))
+})
+
+// 搜索面板与搜索按钮同步：在列表边框“碰到”按钮前不移动；碰到后一起移动
+const searchPanelStyle = computed(() => {
+  // 让面板与搜索按钮保持固定间距（按钮上方 8px）
+  const btnBottom = parseFloat(searchButtonStyle.value.bottom)
+  const bottom = btnBottom + 8 + 52 // 52 为面板内部视觉的偏移近似
+  return { bottom: bottom + 'px' }
+})
 
 const setFilter = (type, value) => {
   if (type === 'chargeType') {
@@ -527,7 +626,7 @@ const updateCardHeight = () => {
     // 从收起状态拖拽：完全跟手，不限制任何边界
     newHeight = collapsedHeight + cardDragOffset.value
     // 不设置任何限制，完全跟手
-  } else {
+        } else {
     // 从展开状态拖拽：完全跟手，不限制任何边界
     newHeight = expandedHeight + cardDragOffset.value
     // 不设置任何限制，完全跟手
@@ -614,6 +713,12 @@ const selectStationFromList = (station) => {
   }
 }
 
+// 列表项点击：先高亮并飞行，再进入详情
+const openStationFromList = (station) => {
+  selectStationFromList(station)
+  router.push(`/station/${station.stationId}`)
+}
+
 const handleSortChange = (value) => {
   sortType.value = value
   console.log('排序方式改变:', value)
@@ -631,7 +736,9 @@ const sendToCar = (station) => {
 
 const navigateToStation = (station) => {
   console.log('导航到站点:', station.stationName)
-  planRouteToStation(station.stationId)
+  if (mapRef.value && mapRef.value.openAmapNavigation) {
+    mapRef.value.openAmapNavigation(station.stationId)
+  }
 }
 
 const goToStationDetail = (stationId) => {
@@ -645,6 +752,38 @@ const planRouteToStation = (stationId) => {
 
 const goToFilterPage = () => {
   router.push('/filter')
+}
+
+// 地图空白区域点击：当列表已展开时收起
+const onMapBlankClick = () => {
+  if (!cardCollapsed.value && showStationList.value) {
+    collapseCard()
+  }
+}
+
+// 顶部定位按钮：调用子组件 MapView 的定位方法
+const locateUser = () => {
+  if (mapRef.value && mapRef.value.locateUser) {
+    mapRef.value.locateUser()
+  }
+}
+
+const hideSearch = () => {
+  showSearch.value = false
+  searchQuery.value = ''
+}
+
+const toggleSearchPanel = () => {
+  showSearchPanel.value = !showSearchPanel.value
+}
+
+// 刷新列表：清除搜索条件，收起搜索面板并回到推荐列表
+const refreshList = async () => {
+  searchQuery.value = ''
+  showSearch.value = false
+  showSearchPanel.value = false
+  // 重新触发计算属性，无需强制刷新；如需重载数据可调用：
+  // await stationStore.fetchStations()
 }
 
 const goBack = () => {
@@ -671,6 +810,14 @@ onMounted(async () => {
   
   // 检查是否需要规划路线
   await handleRoutePlanning()
+
+  // 检查是否来自详情的App导航请求
+  const navTo = route?.query?.navTo
+  if (navTo && mapRef.value && mapRef.value.openAmapNavigation) {
+    mapRef.value.openAmapNavigation(String(navTo))
+    // 清除query，避免再次触发
+    router.replace({ path: route.path })
+  }
   
   // 调试信息：显示距离计算状态
   console.log('📊 充电桩数据加载完成，共', stationStore.stations.length, '个充电桩')
@@ -714,25 +861,7 @@ const handleRoutePlanning = async () => {
   overflow: hidden;
 }
 
-/* 顶部搜索栏 */
-.mobile-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  padding: 8px 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.search-container {
-  flex: 1;
-}
+/* 顶部 mobile-header 已移除 */
 
 .header-actions {
   display: flex;
@@ -740,8 +869,8 @@ const handleRoutePlanning = async () => {
 }
 
 .action-btn {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border: none;
   background: rgba(8, 28, 84, 0.1);
   border-radius: 8px;
@@ -749,8 +878,69 @@ const handleRoutePlanning = async () => {
   align-items: center;
   justify-content: center;
   color: #081c54;
-  font-size: 18px;
+  font-size: 16px;
   transition: all 0.3s ease;
+}
+
+/* 右侧浮动定位按钮 */
+.floating-locate {
+  position: fixed;
+  right: 14px;
+  bottom: calc(20vh + 24px);
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(8, 28, 84, 0.72); /* 增加透明度 */
+  color: #fff;
+  border: none;
+  box-shadow: 0 6px 16px rgba(8, 28, 84, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+}
+
+.floating-locate :deep(.van-icon) { font-size: 18px; }
+
+/* 与定位按钮一致的搜索按钮（圆角正方形），位于定位按钮正上方 */
+.floating-search {
+  position: fixed;
+  right: 14px;
+  bottom: calc(20vh + 24px + 56px); /* 初始：位于定位按钮上方 56px */
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(8, 28, 84, 0.72);
+  color: #fff;
+  border: none;
+  box-shadow: 0 6px 16px rgba(8, 28, 84, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1400; /* 高于把手与卡片，确保可点击 */
+}
+
+.floating-search :deep(.van-icon) { font-size: 18px; }
+
+/* 搜索展开面板，定位于搜索按钮正上方 */
+.floating-search-panel {
+  position: fixed;
+  right: 14px;
+  bottom: calc(20vh + 24px + 56px + 60px); /* 与按钮保持约 8px + 52px 面板内部偏移 */
+  width: min(76vw, 320px);
+  background: rgba(255,255,255,0.96);
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(8, 28, 84, 0.18);
+  padding: 8px;
+  z-index: 1200;
+}
+
+/* 搜索面板点击关闭遮罩 */
+.floating-search-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.02);
+  z-index: 1199;
 }
 
 .action-btn:active {
@@ -761,7 +951,7 @@ const handleRoutePlanning = async () => {
 /* 全屏地图 */
 .map-fullscreen {
   position: fixed; /* 固定定位，不受页面滚动影响 */
-  top: 60px; /* 距离顶部60px（搜索栏高度） */
+  top: 0px; /* 距离顶部60px（搜索栏高度） */
   left: 0;
   right: 0;
   bottom: 16.67vh; /* 距离底部16.67vh（收起状态高度） */
@@ -779,7 +969,7 @@ const handleRoutePlanning = async () => {
   background: white;
   border-radius: 16px 16px 0 0;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
-  z-index: 999;
+  z-index: 1100; /* 高于定位按钮，确保上拉后不被覆盖 */
   transition: all 0.3s ease;
   overflow: hidden;
   touch-action: none; /* 禁用默认触摸行为 */
@@ -795,10 +985,12 @@ const handleRoutePlanning = async () => {
 
 .bottom-card.card-expanded {
   max-height: 75vh; /* 详情状态：四分之三屏幕 */
+  min-height: 75vh;
 }
 
 .bottom-card.list-expanded {
   max-height: 75vh; /* 列表状态：四分之三屏幕 */
+  min-height: 75vh;
 }
 
 .bottom-card.card-collapsed {
@@ -807,7 +999,7 @@ const handleRoutePlanning = async () => {
 }
 
 .card-handle {
-  padding: 12px 0 8px;
+  padding: 12px 0 0px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -944,6 +1136,8 @@ const handleRoutePlanning = async () => {
   font-size: 12px;
   color: #555;
 }
+
+.collapsed-empty { color: #999; font-size: 12px; text-align: center; padding: 8px 0; }
 
 .card-content {
   padding: 0 20px 20px;
@@ -1086,10 +1280,12 @@ const handleRoutePlanning = async () => {
   padding: 12px 0;
   border-bottom: 1px solid #f0f0f0;
   gap: 12px;
+  position: relative; /* 使子元素的 z-index 生效 */
 }
 
 .sort-filter-bar .van-dropdown-menu {
   flex: 1;
+  z-index: 0; /* 避免覆盖右侧“筛选”按钮的点击区域 */
 }
 
 .filter-btn {
@@ -1102,6 +1298,9 @@ const handleRoutePlanning = async () => {
   border-radius: 6px;
   color: #666;
   font-size: 14px;
+  position: relative;
+  z-index: 1; /* 确保高于下拉菜单容器 */
+  cursor: pointer;
 }
 
 /* 站点列表项 */
@@ -1110,7 +1309,9 @@ const handleRoutePlanning = async () => {
   overflow-y: auto;
   overflow-x: hidden;
   padding-top: 8px;
-  max-height: calc(75vh - 110px); /* 减去头部和筛选栏的高度 */
+  height: calc(75vh - 110px); /* 将可视区域锁定为固定高度，不随内容条数变化 */
+  min-height: calc(75vh - 110px);
+  max-height: calc(75vh - 110px);
   -webkit-overflow-scrolling: touch; /* iOS平滑滚动 */
 }
 

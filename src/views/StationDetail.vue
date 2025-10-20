@@ -178,8 +178,14 @@ const goBack = () => router.back()
 
 const navigate = () => {
   if (!detail.value) return
-  import('vant').then(({ showToast }) => showToast({ message: `开始导航到 ${detail.value.stationName}`, type: 'success' }))
-  router.push({ path: '/', query: { planRoute: detail.value.stationId, stationName: detail.value.stationName } })
+  // 直接唤起地图App：通过 Home 中的 MapView 暴露的方法
+  const home = window?.app?.$refs?.homeMapRef // 若没有全局引用，使用路由返回后触发
+  if (home && home.openAmapNavigation) {
+    home.openAmapNavigation(detail.value.stationId)
+  } else {
+    // 回退：返回首页后通过 query 触发唤起逻辑（Home收到后openAmapNavigation）
+    router.push({ path: '/', query: { navTo: detail.value.stationId } })
+  }
 }
 
 const startCharging = () => {

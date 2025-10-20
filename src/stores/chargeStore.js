@@ -25,12 +25,21 @@ export const useChargeStore = defineStore('charge', {
 
   actions: {
     startCharging(station) {
+      // 适配新数据结构
+      const price = parseFloat(
+        station.totalCostPrice !== undefined ? station.totalCostPrice : station.price
+      )
+      // 估算充电速度：优先用快充桩数量判断一个合理的功率，否则给出保守默认
+      const estimatedSpeedKwh = Number.isFinite(price)
+        ? (station.quickChargeNum && station.quickChargeNum > 0 ? 60 : 7)
+        : (station.quickChargeNum && station.quickChargeNum > 0 ? 60 : 7)
+
       this.currentSession = {
         id: Date.now(),
-        stationId: station.id,
+        stationId: station.stationId || station.id,
         startTime: new Date(),
-        stationName: station.name,
-        pricePerKWh: station.price
+        stationName: station.stationName || station.name,
+        pricePerKWh: Number.isFinite(price) ? price : 1.2
       }
       this.charging = true
       this.chargeProgress = 0
@@ -38,9 +47,8 @@ export const useChargeStore = defineStore('charge', {
       this.energyCharged = 0
       this.cost = 0
       
-      // 根据充电桩功率设置充电速度（模拟）
-      const maxPower = Math.max(...station.power.map(p => parseInt(p.toString())))
-      this.chargingSpeed = maxPower * 0.8 // 模拟实际充电速度为最大功率的80%
+      // 根据站点信息设置充电速度（模拟）
+      this.chargingSpeed = estimatedSpeedKwh // kWh/h
     },
 
     updateChargingProgress() {
