@@ -14,7 +14,9 @@
     "dev:clean": "npm run clean && npm run dev",
     "generate-certs": "node scripts/generate-certs.cjs",
     "generate-certs:win": "generate-certs.bat",
+    "generate-certs:win-enhanced": "generate-certs-enhanced.bat",
     "generate-certs:unix": "./generate-certs.sh",
+    "start:http": "start-http.bat",
     "serve:https": "npm run build && npm run preview:https"
   },
   "dependencies": {
