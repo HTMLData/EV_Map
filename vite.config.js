@@ -52,12 +52,6 @@ export default defineConfig({
       'Cache-Control': 'no-cache, no-store, must-revalidate'
     },
     proxy: {
-      // 配置代理以便在开发环境访问 mock 数据
-      '/mock': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/mock/, '')
-      },
       // 代理高德地图API请求
       '/amap': {
         target: 'https://webapi.amap.com',

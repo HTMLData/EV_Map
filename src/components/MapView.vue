@@ -18,7 +18,7 @@
     
     <!-- 定位按钮 -->
     <div class="location-btn" @click="locateUser" @touchstart="handleTouchStart" @touchend="handleTouchEnd" v-show="!mapLoading && !mapError">
-      <CustomIcon name="location" :size="24" color="#fff" />
+      <img src="/images/target-icon.svg" alt="定位" class="location-icon" />
     </div>
     
     <!-- 清除路线按钮 -->
@@ -41,7 +41,7 @@ const props = defineProps({
     default: () => []
   },
   selectedStationId: {
-    type: Number,
+    type: String,
     default: null
   }
 })
@@ -100,13 +100,7 @@ const initMap = () => {
     }
     
     // 异步加载控件
-    // 1. 缩放控件（桌面端显示，移动端隐藏）
-    if (!isMobile()) {
-      window.AMap.plugin('AMap.ToolBar', () => {
-        const toolbar = new window.AMap.ToolBar(amapConfig.controls.toolbar)
-        map.addControl(toolbar)
-      })
-    }
+    // 1. 缩放控件已删除（用户要求删除右下角缩放按钮）
     
     // 2. 比例尺控件
     window.AMap.plugin('AMap.Scale', () => {
@@ -114,19 +108,19 @@ const initMap = () => {
       map.addControl(scale)
     })
     
-    // 3. 控制罗盘控件
+    // 2. 控制罗盘控件
     window.AMap.plugin('AMap.ControlBar', () => {
       const controlBar = new window.AMap.ControlBar(amapConfig.controls.controlBar)
       map.addControl(controlBar)
     })
     
-    // 4. 定位控件（使用高德地图定位服务）
+    // 3. 定位控件（使用高德地图定位服务）
     window.AMap.plugin('AMap.Geolocation', () => {
       geolocation = new window.AMap.Geolocation(amapConfig.geolocation)
       console.log('高德地图定位服务加载完成')
     })
     //不美观、且用处不大删掉
-    // 5. 鹰眼控件
+    // 4. 鹰眼控件
     // window.AMap.plugin('AMap.HawkEye', () => {
     //   const hawkEye = new window.AMap.HawkEye({
     //     position: 'LB', // 左下角
@@ -137,13 +131,13 @@ const initMap = () => {
     //   map.addControl(hawkEye)
     // })
     
-    // 6. 图层切换控件
+    // 5. 图层切换控件
     window.AMap.plugin('AMap.MapType', () => {
       const mapType = new window.AMap.MapType(amapConfig.controls.mapType)
       map.addControl(mapType)
     })
 
-    // 7. 驾车路线规划服务
+    // 6. 驾车路线规划服务
     window.AMap.plugin('AMap.Driving', () => {
       driving = new window.AMap.Driving({
         map: map,
@@ -182,6 +176,9 @@ const initMap = () => {
 
 // 渲染充电桩标记
 const renderMarkers = () => {
+  console.log('开始渲染充电桩标记，站点数量:', props.stations.length)
+  console.log('站点数据:', props.stations)
+  
   // 清除现有标记
   if (markers.length > 0) {
     map.remove(markers)
@@ -189,18 +186,19 @@ const renderMarkers = () => {
   }
 
   // 添加新标记
-  props.stations.forEach(station => {
+  props.stations.forEach((station, index) => {
+    console.log(`处理站点 ${index + 1}:`, station)
     // 根据状态选择不同的图标
-    const statusColor = getStatusColor(station.status)
+    const statusColor = getStatusColor(station.openStatus)
     const marker = new window.AMap.Marker({
-      position: [station.longitude, station.latitude],
-      title: station.name,
+      position: [station.lng, station.lat],
+      title: station.stationName,
       icon: new window.AMap.Icon({
-        size: new window.AMap.Size(36, 36),
-        image: createEVMarkerIcon(statusColor, props.selectedStationId === station.id),
-        imageSize: new window.AMap.Size(36, 36)
+        size: new window.AMap.Size(44, 44),
+        image: createEVMarkerIcon(statusColor, props.selectedStationId === station.stationId, station.quickAvailableNum + station.slowAvailableNum),
+        imageSize: new window.AMap.Size(44, 44)
       }),
-      extData: { stationId: station.id }
+      extData: { stationId: station.stationId }
     })
 
     // 设置标记点击事件
@@ -210,7 +208,7 @@ const renderMarkers = () => {
     })
 
     // 如果是选中的站点，设置更高的层级
-    if (props.selectedStationId === station.id) {
+    if (props.selectedStationId === station.stationId) {
       marker.setzIndex(100)
     }
 
@@ -220,20 +218,24 @@ const renderMarkers = () => {
   // 将标记添加到地图
   if (markers.length > 0) {
     map.add(markers)
+    console.log('成功添加', markers.length, '个标记到地图')
+  } else {
+    console.warn('没有标记被添加到地图')
   }
 }
 
 // 显示信息窗口
 const showInfoWindow = (station) => {
-  const statusColor = getStatusColor(station.status)
+  const statusColor = getStatusColor(station.openStatus)
+  const statusText = station.openStatus === 1 ? '营业中' : '暂停营业'
   infoWindow = new window.AMap.InfoWindow({
     content: `
       <div class="volkswagen-info-window">
         <div class="info-header">
-          <h3 class="station-title">${station.name}</h3>
+          <h3 class="station-title">${station.stationName}</h3>
           <div class="header-right">
             <div class="status-badge" style="background-color: ${statusColor}20; color: ${statusColor}; border: 1px solid ${statusColor}40;">
-              ${station.status}
+              ${statusText}
             </div>
             <button class="close-btn" onclick="window.closeInfoWindow()">×</button>
           </div>
@@ -246,22 +248,22 @@ const showInfoWindow = (station) => {
           </div>
           <div class="info-item">
             <span class="label">价格</span>
-            <span class="value">¥${station.price}/kWh</span>
+            <span class="value">¥${station.totalCostPrice}/kWh</span>
           </div>
           <div class="info-item">
-            <span class="label">可用</span>
-            <span class="value">${station.availablePorts}/${station.totalPorts}</span>
+            <span class="label">快充</span>
+            <span class="value">${station.quickAvailableNum}/${station.quickChargeNum}</span>
           </div>
           <div class="info-item">
-            <span class="label">功率</span>
-            <span class="value">${station.power.join(', ')}</span>
+            <span class="label">慢充</span>
+            <span class="value">${station.slowAvailableNum}/${station.slowChargeNum}</span>
           </div>
         </div>
         <div class="info-actions">
-          <button class="volkswagen-btn primary" onclick="window.goToStationDetail(${station.id})">
+          <button class="volkswagen-btn primary" onclick="window.goToStationDetail('${station.stationId}')">
             查看详情
           </button>
-          <button class="volkswagen-btn secondary" onclick="window.planRouteToStation(${station.id})">
+          <button class="volkswagen-btn secondary" onclick="window.planRouteToStation('${station.stationId}')">
             导航前往
           </button>
         </div>
@@ -272,7 +274,7 @@ const showInfoWindow = (station) => {
     closeWhenClickMap: true
   })
 
-  infoWindow.open(map, [station.longitude, station.latitude])
+  infoWindow.open(map, [station.lng, station.lat])
 }
 
 // 规划路线到指定充电桩 - 增强版本
@@ -303,8 +305,8 @@ const planRouteToStation = (stationId) => {
 
   console.log('📍 路线规划参数:')
   console.log('  - 起点:', stationStore.userLocation)
-  console.log('  - 终点:', { latitude: station.latitude, longitude: station.longitude })
-  console.log('  - 充电桩:', station.name)
+  console.log('  - 终点:', { latitude: station.lat, longitude: station.lng })
+  console.log('  - 充电桩:', station.stationName)
   
   // 4. 清除之前的路线
   if (routePolyline.value) {
@@ -318,8 +320,8 @@ const planRouteToStation = (stationId) => {
     stationStore.userLocation.latitude
   )
   const endPoint = new window.AMap.LngLat(
-    station.longitude, 
-    station.latitude
+    station.lng, 
+    station.lat
   )
 
   // 6. 设置超时机制
@@ -792,49 +794,66 @@ const tryBrowserGeolocation = (showToast, clearToast, timeoutId) => {
 }
 
 // 获取状态对应的颜色
-const getStatusColor = (status) => {
-  return statusColors[status] || '#888'
+const getStatusColor = (openStatus) => {
+  return openStatus === 1 ? '#52c41a' : '#ff4d4f'
 }
 
-// 创建大众风格的充电桩标记图标
-const createEVMarkerIcon = (color, isSelected = false) => {
-  const size = isSelected ? 48 : 36
-  const scale = size / 36
-  const strokeWidth = isSelected ? 2.4 : 1.8
+// 创建充电桩标记图标 - 参照图片设计
+const createEVMarkerIcon = (color, isSelected = false, availableCount = 0) => {
+  const size = isSelected ? 56 : 44
+  const scale = size / 44
+  const strokeWidth = isSelected ? 3 : 2
+  
+  // 根据可用数量确定颜色
+  let markerColor = color
+  if (availableCount === 0) {
+    markerColor = '#999999' // 灰色表示无可用
+  } else if (availableCount <= 2) {
+    markerColor = '#ff9500' // 橙色表示紧张
+  } else {
+    markerColor = '#34c759' // 绿色表示充足
+  }
   
   const svg = `
     <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <filter id="glow">
-          <feGaussianBlur stdDeviation="${2.7 * scale}" result="coloredBlur"/>
-          <feMerge> 
-            <feMergeNode in="coloredBlur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
+        <filter id="shadow">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.3)"/>
         </filter>
       </defs>
-      <!-- 外圈光晕 -->
-      <circle cx="${size/2}" cy="${size/2}" r="${16.2 * scale}" fill="${color}" opacity="0.24" filter="url(#glow)"/>
+      
+      <!-- 外圈阴影 -->
+      <circle cx="${size/2}" cy="${size/2}" r="${size/2 - 1}" 
+              fill="rgba(0,0,0,0.1)" 
+              opacity="0.3"/>
+      
       <!-- 主圆圈 -->
-      <circle cx="${size/2}" cy="${size/2}" r="${12.6 * scale}" fill="${color}" stroke="#fff" stroke-width="${strokeWidth}"/>
-      <!-- 大众充电图标 -->
-      <g transform="translate(${size/2}, ${size/2})">
-        <!-- 充电桩主体 -->
-        <rect x="${-3.6 * scale}" y="${-7.2 * scale}" width="${7.2 * scale}" height="${14.4 * scale}" rx="${1.8 * scale}" fill="#fff"/>
-        <!-- 充电插头 -->
-        <rect x="${-1.8 * scale}" y="${-5.4 * scale}" width="${3.6 * scale}" height="${3.6 * scale}" rx="${0.9 * scale}" fill="${color}"/>
-        <!-- 充电指示线 -->
-        <rect x="${-0.9 * scale}" y="${-0.9 * scale}" width="${1.8 * scale}" height="${1.8 * scale}" fill="#fff"/>
-        <rect x="${-0.9 * scale}" y="${1.8 * scale}" width="${1.8 * scale}" height="${1.8 * scale}" fill="#fff"/>
-        <rect x="${-0.9 * scale}" y="${4.5 * scale}" width="${1.8 * scale}" height="${1.8 * scale}" fill="#fff"/>
-        <!-- 大众Logo标识 -->
-        <circle cx="0" cy="${-9 * scale}" r="${2 * scale}" fill="#fff" stroke="${color}" stroke-width="${0.5 * scale}"/>
-        <text x="0" y="${-8.5 * scale}" text-anchor="middle" font-size="${2 * scale}" font-weight="bold" fill="${color}">VW</text>
-      </g>
-      <!-- 选中状态的外圈 -->
-      ${isSelected ? `<circle cx="${size/2}" cy="${size/2}" r="${20 * scale}" fill="none" stroke="#FFD700" stroke-width="${2 * scale}" stroke-dasharray="${4 * scale},${2 * scale}"/>` : ''}
+      <circle cx="${size/2}" cy="${size/2}" r="${size/2 - strokeWidth/2 - 1}" 
+              fill="white" 
+              stroke="${markerColor}" 
+              stroke-width="${strokeWidth}"
+              filter="url(#shadow)"/>
+      
+      <!-- 充电桩图标 -->
+      <rect x="${size/2 - 8 * scale}" y="${size/2 - 6 * scale}" 
+            width="${16 * scale}" height="${8 * scale}" 
+            rx="${2 * scale}" fill="${markerColor}"/>
+      
+      <!-- 充电插头 -->
+      <rect x="${size/2 - 2 * scale}" y="${size/2 - 8 * scale}" 
+            width="${4 * scale}" height="${4 * scale}" 
+            rx="${1 * scale}" fill="${markerColor}"/>
+      
+      <!-- 可用数量文字 -->
+      <text x="${size/2}" y="${size/2 + 2 * scale}" 
+            text-anchor="middle" 
+            font-family="Arial, sans-serif" 
+            font-size="${10 * scale}" 
+            font-weight="bold" 
+            fill="${markerColor}">${availableCount}</text>
     </svg>
   `
+  
   return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
 }
 
@@ -1014,13 +1033,40 @@ console.log('🔧 全局函数已设置:', {
   closeInfoWindow: typeof window.closeInfoWindow
 })
 
+// 飞行到指定站点
+const flyToStation = (station) => {
+  if (!map || !station) return
+  
+  console.log('飞行到站点:', station.stationName)
+  
+  // 飞行到站点位置
+  map.setZoomAndCenter(16, [station.lng, station.lat])
+  
+  // 高亮对应的Marker
+  if (markers.length > 0) {
+    markers.forEach(marker => {
+      if (marker.getExtData().stationId === station.stationId) {
+        // 移除其他Marker的高亮
+        markers.forEach(m => {
+          if (m !== marker) {
+            m.setzIndex(1)
+          }
+        })
+        // 高亮当前Marker
+        marker.setzIndex(100)
+      }
+    })
+  }
+}
+
 // 暴露方法
 defineExpose({
   locateUser,
   planRouteToStation,
   reloadMap,
   goToStationDetail,
-  closeInfoWindow
+  closeInfoWindow,
+  flyToStation
 })
 </script>
 
@@ -1038,12 +1084,12 @@ defineExpose({
 }
 
 .location-btn {
-  position: absolute;
-  bottom: 20px;
+  position: fixed; /* 改为固定定位 */
+  bottom: calc(100vh / 3); /* 屏幕下半三分之一位置 */
   right: 20px;
   width: 50px;
   height: 50px;
-  border-radius: 25px;
+  border-radius: 50%; /* 完全圆形 */
   background: linear-gradient(135deg, rgba(8, 28, 84, 0.6) 0%, rgba(10, 36, 104, 0.6) 100%);
   display: flex;
   align-items: center;
@@ -1053,6 +1099,12 @@ defineExpose({
   cursor: pointer;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
+}
+
+.location-icon {
+  width: 24px;
+  height: 24px;
+  filter: brightness(0) invert(1); /* 将SVG图标变为白色 */
 }
 
 .location-btn:hover {

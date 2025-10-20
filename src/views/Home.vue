@@ -1,342 +1,659 @@
 <template>
-  <div class="volkswagen-container">
-    <!-- 大众风格的顶部导航栏 -->
-    <div class="volkswagen-header">
-      <div class="header-left">
-        <div class="logo">
-          <span class="logo-text">VOLKSWAGEN</span>
-          <span class="logo-subtitle">充电网络</span>
+  <div class="mobile-container">
+    <!-- 顶部搜索栏 -->
+    <div class="mobile-header">
+      <div class="search-container">
+        <van-search
+          v-model="searchQuery"
+          placeholder="搜索充电桩名称或地址"
+          @search="handleSearch"
+          @clear="handleClearSearch"
+          @input="handleSearchInput"
+          shape="round"
+          background="rgba(255, 255, 255, 0.95)"
+        />
         </div>
+      <div class="header-actions">
+        <button class="action-btn" @click="toggleSearch">
+          <van-icon name="search" />
+        </button>
+        <button class="action-btn" @click="goToFilterPage">
+          <van-icon name="filter-o" />
+        </button>
       </div>
-      <div class="header-right">
-        <!-- 搜索框已移动到侧边栏 -->
       </div>
+
+    <!-- 全屏地图 -->
+    <div class="map-fullscreen">
+      <MapView
+        :stations="searchResults"
+        :selected-station-id="selectedStationId"
+        @select-station="handleStationSelect"
+        ref="mapRef"
+      />
     </div>
 
-    <!-- 主要内容区域 -->
-    <div class="main-content">
-      <!-- 移动端悬浮按钮 -->
-      <div class="mobile-floating-btn" v-if="isMobile" @click="goToFilterPage">
-        <CustomIcon name="charging-station" :size="20" color="#fff" />
-        <span class="btn-text">筛选</span>
+    <!-- 底部站点卡片 -->
+    <div class="bottom-card" :class="{ 
+      'card-expanded': selectedStation, 
+      'list-expanded': showStationList,
+      'card-collapsed': cardCollapsed,
+      'dragging': isDragging
+    }">
+      <div class="card-handle" 
+           @click="toggleCard"
+           @touchstart="handleCardTouchStart"
+           @touchmove="handleCardTouchMove"
+           @touchend="handleCardTouchEnd"
+           @touchcancel="handleCardTouchEnd">
+        <div class="handle-bar"></div>
+        <div class="handle-text" v-if="cardCollapsed">上拉查看充电桩</div>
       </div>
 
-      <!-- 左侧侧边栏 -->
-      <div 
-        class="sidebar" 
-        :class="{ collapsed: sidebarCollapsed, 'mobile-overlay': isMobile }"
-        @click="closeSidebarOnOverlay"
-      >
-        <!-- 始终显示的头部 -->
-        <div class="sidebar-header">
-          <h2 class="sidebar-title" v-show="!sidebarCollapsed">充电桩筛选</h2>
-          <div class="sidebar-toggle" @click="toggleSidebar">
-            <CustomIcon :name="sidebarCollapsed ? 'charging-station' : 'clear-route'" :size="16" color="#081c54" />
-          </div>
+      <!-- 收起预览区（下拉后显示前两条简要信息） -->
+      <div class="collapsed-preview" v-if="cardCollapsed">
+        <div class="collapsed-title">
+          <van-icon name="location-o" />
+          <span>附近推荐</span>
         </div>
+        <div class="collapsed-items">
+          <div 
+            v-for="station in collapsedPreviewStations" 
+            :key="station.stationId" 
+            class="collapsed-item"
+            @click="expandFromPreview(station)"
+          >
+            <div class="collapsed-item-left">
+              <div class="collapsed-name">{{ station.stationName }}</div>
+              <div class="collapsed-sub">{{ station.address }}</div>
+          </div>
+            <div class="collapsed-item-right">
+              <div class="collapsed-distance">{{ station.distance ? station.distance + 'km' : '定位中...' }}</div>
+              <div class="collapsed-availability">
+                <span class="c-fast">快 {{ station.quickAvailableNum }}/{{ station.quickChargeNum }}</span>
+                <span class="c-slow" v-if="station.slowChargeNum > 0">慢 {{ station.slowAvailableNum }}/{{ station.slowChargeNum }}</span>
+        </div>
+            </div>
+                </div>
+              </div>
+            </div>
+            
+      <!-- 站点详情卡片 -->
+      <div class="card-content" v-if="selectedStation && !showStationList && !cardCollapsed">
+        <div class="station-header">
+          <h3 class="station-name">{{ selectedStation.stationName }}</h3>
+          <div class="station-distance">{{ selectedStation.distance ? selectedStation.distance + 'km' : '定位中...' }}</div>
+                </div>
         
-        
-        <!-- 可折叠的内容 -->
-        <div 
-          class="sidebar-content" 
-          :class="{ collapsed: sidebarCollapsed }"
-          :style="{ 
-            maxHeight: sidebarCollapsed ? '0px' : '1000px',
-            opacity: sidebarCollapsed ? 0 : 1
-          }"
-        >
-          <!-- 筛选器 -->
-          <div class="volkswagen-filters" :class="{ 'animate-in': !sidebarCollapsed }">
-            <div class="filter-group">
-              <label>充电类型</label>
-              <div class="filter-options">
-                <div
-                  v-for="(type, index) in chargeTypes"
-                  :key="type.value"
-                  class="filter-chip"
-                  :class="{ 
-                    active: stationStore.filterOptions.type === type.value,
-                    'animate-in': !sidebarCollapsed
-                  }"
-                  :style="{ 
-                    animationDelay: (index * 0.05) + 's'
-                  }"
-                  @click="setFilter('type', type.value)"
-                >
-                  {{ type.label }}
+        <div class="station-info">
+          <p class="station-address">{{ selectedStation.address }}</p>
+          
+          <div class="station-tags">
+            <div class="tag-group">
+              <span class="tag fast-charge">
+                <van-icon name="flash" />
+                快充 {{ selectedStation.quickAvailableNum }}/{{ selectedStation.quickChargeNum }}
+              </span>
+              <span class="tag slow-charge" v-if="selectedStation.slowChargeNum > 0">
+                <van-icon name="clock" />
+                慢充 {{ selectedStation.slowAvailableNum }}/{{ selectedStation.slowChargeNum }}
+              </span>
+            </div>
+            
+            <div class="price-info">
+              <span class="price">¥{{ selectedStation.totalCostPrice }}/kWh</span>
+              <span class="brand">{{ selectedStation.brandName }}</span>
+              </div>
+            </div>
+            
+          <div class="station-actions">
+            <van-button type="primary" size="small" @click="goToStationDetail(selectedStation.stationId)">
+              查看详情
+            </van-button>
+            <van-button type="default" size="small" @click="planRouteToStation(selectedStation.stationId)">
+              导航前往
+            </van-button>
                 </div>
               </div>
             </div>
             
-            <div class="filter-group">
-              <label>状态</label>
-              <div class="filter-options">
-                <div
-                  v-for="(status, index) in chargeStatuses"
-                  :key="status.value"
-                  class="filter-chip"
-                  :class="{ 
-                    active: stationStore.filterOptions.status === status.value,
-                    'animate-in': !sidebarCollapsed
-                  }"
-                  :style="{ 
-                    animationDelay: ((index + 3) * 0.05) + 's'
-                  }"
-                  @click="setFilter('status', status.value)"
-                >
-                  {{ status.label }}
-                </div>
+      <!-- 站点列表 -->
+      <div class="station-list" v-if="(!selectedStation || showStationList) && !cardCollapsed">
+        <div class="list-header">
+          <div class="location-info">
+            <van-icon name="location-o" />
+            <span class="location-text">附近推荐</span>
               </div>
-            </div>
-            
-            <div class="filter-group">
-              <label>排序</label>
-              <div class="filter-options">
-                <div
-                  v-for="(sort, index) in sortOptions"
-                  :key="sort.value"
-                  class="filter-chip"
-                  :class="{ 
-                    active: stationStore.filterOptions.sortBy === sort.value,
-                    'animate-in': !sidebarCollapsed
-                  }"
-                  :style="{ 
-                    animationDelay: ((index + 7) * 0.05) + 's'
-                  }"
-                  @click="setFilter('sortBy', sort.value)"
-                >
-                  {{ sort.label }}
-                </div>
-              </div>
-            </div>
-            
-            <!-- 搜索框 -->
-            <div class="filter-group search-group" :class="{ 'animate-in': !sidebarCollapsed }">
-              <label>搜索</label>
-              <div class="search-container">
-                <input 
-                  type="text" 
-                  placeholder="搜索充电桩位置..." 
-                  v-model="searchQuery"
-                  class="volkswagen-search"
-                />
-                <CustomIcon name="search" :size="16" color="#666" class="search-icon" />
-              </div>
+          <div class="list-actions">
+            <button class="action-btn" @click="collapseCard">
+              <van-icon name="cross" />
+            </button>
             </div>
           </div>
 
-          <!-- 充电桩列表 -->
-          <div class="station-list-container" :class="{ 'animate-in': !sidebarCollapsed }">
-            <div class="list-header">
-              <span class="count">{{ searchResults.length }} 个充电桩</span>
+        <!-- 排序和筛选栏 -->
+        <div class="sort-filter-bar">
+          <van-dropdown-menu>
+            <van-dropdown-item 
+              v-model="sortType" 
+              :options="sortOptions" 
+              @change="handleSortChange"
+            />
+            <van-dropdown-item 
+              v-model="distanceFilter" 
+              :options="distanceOptions" 
+              @change="handleDistanceFilter"
+            />
+          </van-dropdown-menu>
+          <button class="filter-btn" @click="goToFilterPage">
+            <van-icon name="filter-o" />
+            筛选
+          </button>
             </div>
-            <div class="station-list">
-              <div
-                v-for="(station, index) in searchResults"
-                :key="station.id"
-                class="volkswagen-station-item"
-                :class="{ 
-                  selected: selectedStationId === station.id,
-                  'animate-in': !sidebarCollapsed
-                }"
-                  :style="{ 
-                    animationDelay: (index * 0.03 + 0.3) + 's'
-                  }"
-                @click="selectStation(station)"
+
+        <!-- 站点列表项 -->
+        <div class="station-items scrollable-list" ref="stationListRef">
+          <div
+            v-for="(station, index) in sortedStations"
+            :key="station.stationId"
+            class="station-item"
+            :class="{ 'item-selected': selectedStationId === station.stationId }"
+            @click="selectStationFromList(station)"
+          >
+            <!-- 站点名称 -->
+            <div class="item-title">
+              <h4 class="station-name">{{ station.stationName }}</h4>
+              <div class="station-tags">
+                <span class="tag star-tag" v-if="station.stationGradeScore >= 4.5">
+                  <van-icon name="star" />
+                  星选
+                </span>
+                <span class="tag brand-tag">{{ station.brandName }}</span>
+                <span class="tag discount-tag" v-if="station.totalCostPrice < 1.5">
+                  <van-icon name="gift" />
+                  充电优惠
+                </span>
+                  </div>
+                </div>
+            
+            <!-- 价格信息 -->
+            <div class="price-section">
+              <div class="main-price">¥{{ station.totalCostPrice }}/度</div>
+              <div class="price-breakdown">
+                电费¥{{ station.electricityPrice }}/度+服务费¥{{ station.servicePrice }}/度
+                  </div>
+                  </div>
+            
+            <!-- 充电桩可用性 -->
+            <div class="availability-section">
+              <div class="availability-item">
+                <span class="label fast-label">快</span>
+                <span class="count">空{{ station.quickAvailableNum }}/{{ station.quickChargeNum }}</span>
+                  </div>
+              <div class="availability-item" v-if="station.slowChargeNum > 0">
+                <span class="label slow-label">慢</span>
+                <span class="count">空{{ station.slowAvailableNum }}/{{ station.slowChargeNum }}</span>
+                </div>
+                </div>
+            
+            <!-- 停车费说明 -->
+            <div class="parking-info" v-if="station.parkFee">
+              <van-icon name="info-o" />
+              <span>{{ station.parkFee }}</span>
+              </div>
+            
+            <!-- 操作按钮 -->
+            <div class="item-actions">
+              <van-button 
+                type="default" 
+                size="small" 
+                icon="car-o"
+                @click.stop="sendToCar(station)"
               >
-                <div class="station-header">
-                  <h3 class="station-name">{{ station.name }}</h3>
-                  <div class="station-status" :class="getStatusClass(station.status)">
-                    {{ station.status }}
-                  </div>
-                </div>
-                <p class="station-address">{{ station.address }}</p>
-                <div class="station-details">
-                  <div class="detail-item">
-                    <span class="label">距离</span>
-                    <span class="value">{{ station.distance ? station.distance + 'km' : '定位中...' }}</span>
-                  </div>
-                  <div class="detail-item">
-                    <span class="label">价格</span>
-                    <span class="value">¥{{ station.price }}/kWh</span>
-                  </div>
-                  <div class="detail-item">
-                    <span class="label">可用</span>
-                    <span class="value">{{ station.availablePorts }}/{{ station.totalPorts }}</span>
-                  </div>
-                </div>
-                <div class="station-features">
-                  <span
-                    v-for="(feature, index) in station.features.slice(0, 3)"
-                    :key="index"
-                    class="feature-tag"
-                  >
-                    {{ feature }}
-                  </span>
-                </div>
-              </div>
+                发送到车
+              </van-button>
+              <van-button 
+                type="default" 
+                size="small" 
+                icon="location-o"
+                @click.stop="navigateToStation(station)"
+              >
+                导航 ({{ station.distance ? station.distance + 'km' : '定位中...' }})
+              </van-button>
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- 地图区域 -->
-      <div class="map-container">
-        <MapView
-          :stations="searchResults"
-          :selected-station-id="selectedStationId"
-          @select-station="handleStationSelect"
-          ref="mapRef"
-        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useStationStore } from '../stores/stationStore'
 import { useBusinessStore } from '../stores/businessStore'
-import { utils } from '../api/mockService'
+import { utils } from '../api/stationService'
 import MapView from '../components/MapView.vue'
-import CustomIcon from '../components/CustomIcon.vue'
-// Vant 组件已在 main.js 中全局注册
 
+// 路由和状态管理
+const router = useRouter()
+const route = useRoute()
 const stationStore = useStationStore()
 const businessStore = useBusinessStore()
-const router = useRouter()
-const mapRef = ref(null)
 
 // 响应式数据
-const selectedStationId = ref(null)
 const searchQuery = ref('')
-const sidebarCollapsed = ref(false)
+const selectedStationId = ref(null)
+const selectedStation = ref(null)
+const mapRef = ref(null)
+const stationListRef = ref(null)
 const isMobile = ref(false)
-
-// 检测移动端
-const checkMobile = () => {
-  isMobile.value = window.innerWidth <= 768
-  // 移动端默认收起侧边栏
-  if (isMobile.value) {
-    sidebarCollapsed.value = true
-  }
-}
-
-// 简化的移动端处理
-const handleMobileKeyboard = () => {
-  // 移除复杂的键盘处理逻辑，使用简单的CSS方案
-  console.log('移动端键盘处理已简化')
-}
+const showStationList = ref(false)
+const cardCollapsed = ref(true) // 默认关闭状态
+const cardTouchStartY = ref(null)
+const cardTouchStartTime = ref(null)
+const cardDragOffset = ref(0) // 拖拽偏移量
+const isDragging = ref(false) // 是否正在拖拽
+const cardHeight = ref(0) // 卡片当前高度
 
 // 筛选选项
+const chargeTypeFilter = ref('all')
+const chargeStatusFilter = ref('all')
+
+// 排序选项
+const sortType = ref('distance')
+const distanceFilter = ref('3km')
+
 const chargeTypes = [
   { label: '全部', value: 'all' },
-  { label: '快充', value: '快充' },
-  { label: '慢充', value: '慢充' }
+  { label: '快充', value: 'quick' },
+  { label: '慢充', value: 'slow' }
 ]
 
 const chargeStatuses = [
   { label: '全部', value: 'all' },
-  { label: '空闲', value: '空闲' },
-  { label: '部分空闲', value: '部分空闲' },
-  { label: '繁忙', value: '繁忙' }
+  { label: '营业中', value: '1' },
+  { label: '暂停营业', value: '0' }
 ]
 
 const sortOptions = [
-  { label: '距离最近', value: 'distance' },
-  { label: '价格最低', value: 'price' }
+  { text: '距离优先', value: 'distance' },
+  { text: '快充桩数量', value: 'quickCount' },
+  { text: '价格优先', value: 'price' }
+]
+
+const distanceOptions = [
+  { text: '1KM', value: '1km' },
+  { text: '3KM', value: '3km' },
+  { text: '5KM', value: '5km' },
+  { text: '10KM', value: '10km' }
 ]
 
 // 计算搜索结果
 const searchResults = computed(() => {
   let results = stationStore.filteredStations
+  console.log('searchResults计算:', {
+    filteredStations: stationStore.filteredStations.length,
+    searchQuery: searchQuery.value,
+    results: results.length
+  })
   
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     results = results.filter(station => 
-      station.name.toLowerCase().includes(query) ||
+      station.stationName.toLowerCase().includes(query) ||
       station.address.toLowerCase().includes(query) ||
-      station.operator.toLowerCase().includes(query)
+      station.brandName.toLowerCase().includes(query)
     )
   }
   
   return results
 })
 
+// 计算排序后的站点列表
+const sortedStations = computed(() => {
+  let results = [...searchResults.value]
+  
+  // 按排序类型排序
+  switch (sortType.value) {
+    case 'distance':
+      results.sort((a, b) => (a.distance || 0) - (b.distance || 0))
+      break
+    case 'quickCount':
+      results.sort((a, b) => (b.quickAvailableNum || 0) - (a.quickAvailableNum || 0))
+      break
+    case 'price':
+      results.sort((a, b) => (a.totalCostPrice || 0) - (b.totalCostPrice || 0))
+      break
+  }
+  
+  return results
+})
+
+// 监控数据变化
+watch(() => stationStore.stations, (newVal) => {
+  console.log('🔔 stationStore.stations变化:', newVal.length)
+}, { deep: true })
+
+watch(() => searchResults.value, (newVal) => {
+  console.log('🔔 searchResults变化:', newVal.length)
+}, { deep: true })
+
 // 方法
 const handleStationSelect = (station) => {
-  selectedStationId.value = station.id
+  selectedStationId.value = station.stationId
+  selectedStation.value = station
   businessStore.selectStation(station)
 }
 
 const selectStation = (station) => {
-  selectedStationId.value = station.id
+  selectedStationId.value = station.stationId
+  selectedStation.value = station
   businessStore.selectStation(station)
-  
-  // 显示选择提示
-  import('vant').then(({ showToast }) => {
-    showToast({
-      message: `已选择 ${station.name}`,
-      type: 'success',
-      duration: 1500
-    })
-  })
-  
-  // 跳转到详情页
-  router.push(`/station/${station.id}`)
 }
 
-const setFilter = (type, value) => {
-  stationStore.updateFilter(type, value)
+const handleSearch = () => {
+  console.log('搜索:', searchQuery.value)
 }
 
-const toggleSidebar = () => {
-  sidebarCollapsed.value = !sidebarCollapsed.value
+const handleClearSearch = () => {
+  searchQuery.value = ''
 }
 
-// 点击遮罩层关闭侧边栏
-const closeSidebarOnOverlay = (event) => {
-  if (isMobile.value && !sidebarCollapsed.value && event.target === event.currentTarget) {
-    sidebarCollapsed.value = true
+const handleSearchInput = () => {
+  // 实时搜索逻辑
+}
+
+// 收起预览：前两条站点
+const collapsedPreviewStations = computed(() => {
+  return sortedStations.value.slice(0, 2)
+})
+
+// 从预览展开并聚焦站点
+const expandFromPreview = (station) => {
+  cardCollapsed.value = false
+  showStationList.value = true
+  selectedStation.value = null
+  selectedStationId.value = station.stationId
+  businessStore.selectStation(station)
+  if (mapRef.value && mapRef.value.flyToStation) {
+    mapRef.value.flyToStation(station)
   }
 }
 
-// 跳转到筛选页面
+const toggleSearch = () => {
+  // 切换搜索状态
+}
+
+const setFilter = (type, value) => {
+  if (type === 'chargeType') {
+    stationStore.filterOptions.chargeType = value
+  } else if (type === 'openStatus') {
+    stationStore.filterOptions.openStatus = value
+  }
+}
+
+const toggleCard = () => {
+  if (cardCollapsed.value) {
+    // 如果已收起，则展开站点列表
+    cardCollapsed.value = false
+    showStationList.value = true
+    selectedStation.value = null
+    selectedStationId.value = null
+  } else {
+    // 如果已展开，则收起
+    cardCollapsed.value = true
+    selectedStation.value = null
+    selectedStationId.value = null
+    showStationList.value = false
+  }
+}
+
+const handleCardTouchStart = (event) => {
+  // 记录触摸开始位置和时间
+  const touch = event.touches[0]
+  cardTouchStartY.value = touch.clientY
+  cardTouchStartTime.value = Date.now()
+  isDragging.value = true
+  cardDragOffset.value = 0
+  
+  // 获取当前卡片高度
+  const collapsedHeight = window.innerHeight * 0.1667 // 16.67vh
+  const expandedHeight = window.innerHeight * 0.75 // 75vh
+  cardHeight.value = cardCollapsed.value ? collapsedHeight : expandedHeight
+  
+  console.log('🎯 开始拖拽:', {
+    collapsed: cardCollapsed.value,
+    startY: touch.clientY,
+    collapsedHeight,
+    expandedHeight,
+    touchType: 'touchstart',
+    touches: event.touches.length
+  })
+  
+  // 防止页面滚动和默认行为
+  event.preventDefault()
+  event.stopPropagation()
+}
+
+const handleCardTouchMove = (event) => {
+  if (!isDragging.value || !cardTouchStartY.value) return
+  
+  const touch = event.touches[0]
+  const deltaY = touch.clientY - cardTouchStartY.value
+  
+  // 防止页面滚动和默认行为
+  event.preventDefault()
+  event.stopPropagation()
+  
+  // 计算拖拽偏移量（支持双向拖拽）
+  // deltaY > 0 表示向下拖拽，deltaY < 0 表示向上拖拽
+  cardDragOffset.value = -deltaY
+  
+  console.log('👆 拖拽移动:', {
+    deltaY,
+    dragOffset: cardDragOffset.value,
+    collapsed: cardCollapsed.value,
+    currentY: touch.clientY,
+    startY: cardTouchStartY.value,
+    touchType: 'touchmove',
+    touches: event.touches.length,
+    isDragging: isDragging.value,
+    isUpward: deltaY < 0,
+    isDownward: deltaY > 0
+  })
+  
+  // 实时更新卡片高度
+  updateCardHeight()
+}
+
+const handleCardTouchEnd = (event) => {
+  if (!isDragging.value) return
+  
+  const threshold = 50 // 拖拽阈值
+  
+  console.log('🎯 结束拖拽:', {
+    collapsed: cardCollapsed.value,
+    dragOffset: cardDragOffset.value,
+    threshold,
+    shouldExpand: cardCollapsed.value && cardDragOffset.value > threshold,
+    shouldCollapse: !cardCollapsed.value && cardDragOffset.value < -threshold,
+    touchType: event?.type || 'touchend'
+  })
+  
+  // 根据拖拽距离和方向决定是否切换状态
+  if (Math.abs(cardDragOffset.value) > threshold) {
+    if (cardCollapsed.value && cardDragOffset.value > threshold) {
+      // 从收起状态向上拖拽超过阈值，展开
+      console.log('📈 展开卡片')
+      expandCard()
+    } else if (!cardCollapsed.value && cardDragOffset.value < -threshold) {
+      // 从展开状态向下拖拽超过阈值，收起
+      console.log('📉 收起卡片')
+      collapseCard()
+    } else {
+      // 拖拽距离不够，回弹到原状态
+      console.log('🔄 回弹到原状态')
+      resetCardPosition()
+    }
+  } else {
+    // 拖拽距离不够，回弹到原状态
+    console.log('🔄 拖拽距离不够，回弹')
+    resetCardPosition()
+  }
+  
+  // 重置状态
+  cardTouchStartY.value = null
+  cardTouchStartTime.value = null
+  cardDragOffset.value = 0
+  isDragging.value = false
+  
+  // 防止默认行为
+  if (event) {
+    event.preventDefault()
+    event.stopPropagation()
+  }
+}
+
+// 更新卡片高度
+const updateCardHeight = () => {
+  const collapsedHeight = window.innerHeight * 0.1667
+  const expandedHeight = window.innerHeight * 0.75
+  
+  let newHeight
+  
+  if (cardCollapsed.value) {
+    // 从收起状态拖拽：完全跟手，不限制任何边界
+    newHeight = collapsedHeight + cardDragOffset.value
+    // 不设置任何限制，完全跟手
+  } else {
+    // 从展开状态拖拽：完全跟手，不限制任何边界
+    newHeight = expandedHeight + cardDragOffset.value
+    // 不设置任何限制，完全跟手
+  }
+  
+  // 实时更新卡片高度
+  const cardElement = document.querySelector('.bottom-card')
+  if (cardElement) {
+    cardElement.style.height = `${newHeight}px`
+    // 强制重绘
+    cardElement.style.transform = 'translateZ(0)'
+  }
+  
+  console.log('📏 更新高度:', {
+    collapsed: cardCollapsed.value,
+    dragOffset: cardDragOffset.value,
+    newHeight,
+    collapsedHeight,
+    expandedHeight,
+    ratio: newHeight / window.innerHeight,
+    isUpward: cardDragOffset.value > 0,
+    isDownward: cardDragOffset.value < 0,
+    elementHeight: cardElement?.style.height
+  })
+}
+
+// 重置卡片位置
+const resetCardPosition = () => {
+  const cardElement = document.querySelector('.bottom-card')
+  if (cardElement) {
+    cardElement.style.height = ''
+    cardElement.style.transition = 'height 0.3s ease'
+    
+    // 短暂延迟后移除transition，避免影响后续拖拽
+    setTimeout(() => {
+      cardElement.style.transition = ''
+    }, 300)
+  }
+}
+
+const toggleStationList = () => {
+  showStationList.value = !showStationList.value
+  if (!showStationList.value) {
+    selectedStation.value = null
+    selectedStationId.value = null
+  }
+}
+
+const collapseCard = () => {
+  cardCollapsed.value = true
+  selectedStation.value = null
+  selectedStationId.value = null
+  showStationList.value = false
+  
+  // 重置卡片位置
+  resetCardPosition()
+}
+
+const expandCard = () => {
+  cardCollapsed.value = false
+  showStationList.value = true
+  selectedStation.value = null
+  selectedStationId.value = null
+  
+  // 重置卡片位置
+  resetCardPosition()
+  
+  // 滚动到列表顶部
+  nextTick(() => {
+    if (stationListRef.value) {
+      stationListRef.value.scrollTop = 0
+    }
+  })
+}
+
+const selectStationFromList = (station) => {
+  selectedStationId.value = station.stationId
+  selectedStation.value = station
+  businessStore.selectStation(station)
+  
+  // 滑动地图到对应Marker
+  if (mapRef.value) {
+    mapRef.value.flyToStation(station)
+  }
+}
+
+const handleSortChange = (value) => {
+  sortType.value = value
+  console.log('排序方式改变:', value)
+}
+
+const handleDistanceFilter = (value) => {
+  distanceFilter.value = value
+  console.log('距离筛选改变:', value)
+}
+
+const sendToCar = (station) => {
+  console.log('发送到车:', station.stationName)
+  // 实现发送到车的逻辑
+}
+
+const navigateToStation = (station) => {
+  console.log('导航到站点:', station.stationName)
+  planRouteToStation(station.stationId)
+}
+
+const goToStationDetail = (stationId) => {
+  router.push(`/station/${stationId}`)
+}
+
+const planRouteToStation = (stationId) => {
+  // 规划路线逻辑
+  console.log('规划路线到站点:', stationId)
+}
+
 const goToFilterPage = () => {
   router.push('/filter')
 }
 
-const getStatusClass = (status) => {
-  switch (status) {
-    case '空闲': return 'status-free'
-    case '部分空闲': return 'status-partial'
-    case '繁忙': return 'status-busy'
-    default: return ''
-  }
+const goBack = () => {
+  router.back()
 }
 
-// 处理路线规划请求
-const handleRoutePlanning = async () => {
-  try {
-    const route = useRoute()
-    const planRouteId = route?.query?.planRoute
-    
-    if (planRouteId) {
-      await nextTick()
-      // 等待地图组件加载完成
-      setTimeout(() => {
-        if (window.planRouteToStation) {
-          window.planRouteToStation(parseInt(planRouteId))
-          router.replace({ path: '/' })
-        } else {
-          console.warn('路线规划服务未就绪')
-        }
-      }, 2000) // 等待2秒确保地图和路线规划服务加载完成
-    }
-  } catch (error) {
-    console.warn('路线规划处理失败:', error)
-  }
+// 检测移动端
+const checkMobile = () => {
+  isMobile.value = window.innerWidth <= 768
 }
 
 // 生命周期
@@ -345,358 +662,500 @@ onMounted(async () => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
   
-  // 初始化移动端键盘处理
-  setTimeout(() => {
-    handleMobileKeyboard()
-  }, 500) // 延迟执行，确保DOM已渲染
-  
   // 初始化业务流程
   businessStore.startFindFlow()
   
+  console.log('🔄 开始调用fetchStations...')
   await stationStore.fetchStations()
+  console.log('✅ fetchStations完成，当前stations数量:', stationStore.stations.length)
   
   // 检查是否需要规划路线
   await handleRoutePlanning()
   
   // 调试信息：显示距离计算状态
-  console.log('充电桩数据加载完成，共', stationStore.stations.length, '个充电桩')
+  console.log('📊 充电桩数据加载完成，共', stationStore.stations.length, '个充电桩')
   if (stationStore.userLocation) {
     console.log('用户位置:', stationStore.userLocation)
     console.log('已计算距离的充电桩:', stationStore.stations.filter(s => s.distance !== undefined).length)
   } else {
     console.log('用户位置未设置，距离将在定位成功后动态计算')
   }
-  
-  // 测试距离计算功能
-  setTimeout(() => {
-    utils.testDistanceCalculation()
-  }, 2000) // 延迟2秒执行，确保高德地图API已加载
 })
+
+// 处理路线规划请求
+const handleRoutePlanning = async () => {
+  try {
+    const route = useRoute()
+    const planRouteId = route?.query?.planRoute
+    
+    if (planRouteId) {
+      console.log('需要规划路线到站点:', planRouteId)
+      const station = stationStore.getStationById(planRouteId)
+      if (station) {
+        await nextTick()
+        if (mapRef.value) {
+          mapRef.value.planRouteToStation(station.stationId)
+        }
+      }
+    }
+  } catch (error) {
+    console.error('路线规划处理失败:', error)
+  }
+}
 </script>
 
 <style scoped>
-/* 透明效果 */
-.volkswagen-container {
+/* 移动端容器 */
+.mobile-container {
   height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%);
-  color: #081c54;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: #f5f7fa;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
-/* 顶部导航栏 */
-.volkswagen-header {
+/* 顶部搜索栏 */
+.mobile-header {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: 60px;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(15px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  box-shadow: 0 1px 10px rgba(0, 0, 0, 0.03);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
   z-index: 1000;
-}
-
-.header-left .logo {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 8px 16px;
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.logo-text {
-  font-size: 24px;
-  font-weight: 700;
-  color: #081c54;
-  letter-spacing: 0.5px;
-}
-
-.logo-subtitle {
-  font-size: 12px;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .search-container {
-  position: relative;
+  flex: 1;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: rgba(8, 28, 84, 0.1);
+  border-radius: 8px;
   display: flex;
   align-items: center;
-}
-
-.volkswagen-search {
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 10px;
-  padding: 9px 16px 9px 40px;
+  justify-content: center;
   color: #081c54;
-  font-size: 14px;
-  width: 100%;
-  outline: none;
+  font-size: 18px;
   transition: all 0.3s ease;
-  backdrop-filter: blur(5px);
 }
 
-.volkswagen-search:focus {
-  border-color: #081c54;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 0 0 3px rgba(8, 28, 84, 0.1);
+.action-btn:active {
+  background: rgba(8, 28, 84, 0.2);
+  transform: scale(0.95);
 }
 
-.volkswagen-search::placeholder {
-  color: #999;
+/* 全屏地图 */
+.map-fullscreen {
+  position: fixed; /* 固定定位，不受页面滚动影响 */
+  top: 60px; /* 距离顶部60px（搜索栏高度） */
+  left: 0;
+  right: 0;
+  bottom: 16.67vh; /* 距离底部16.67vh（收起状态高度） */
+  height: calc(100vh - 60px - 16.67vh); /* 固定高度：屏幕高度 - 顶部搜索栏 - 收起状态 */
+  overflow: hidden; /* 禁用滚动 */
+  z-index: 1; /* 确保在地图内容之上 */
 }
 
-.search-icon {
-  position: absolute;
-  left: 12px;
-  color: #666;
-  font-size: 16px;
+/* 底部卡片 */
+.bottom-card {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 999;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  touch-action: none; /* 禁用默认触摸行为 */
+  -webkit-touch-callout: none; /* 禁用iOS长按菜单 */
+  -webkit-user-select: none; /* 禁用文本选择 */
+  user-select: none;
 }
 
-/* 侧边栏搜索组样式 */
-.search-group {
-  margin-top: 20px;
+/* 拖拽时的样式 */
+.bottom-card.dragging {
+  transition: none; /* 拖拽时禁用过渡动画 */
 }
 
-.search-group .search-container {
-  margin-top: 8px;
+.bottom-card.card-expanded {
+  max-height: 75vh; /* 详情状态：四分之三屏幕 */
 }
 
-/* 主要内容区域 */
-.main-content {
-  display: flex;
-  height: 100vh;
-  padding-top: 60px;
+.bottom-card.list-expanded {
+  max-height: 75vh; /* 列表状态：四分之三屏幕 */
 }
 
-/* 侧边栏 */
-.sidebar {
-  width: 300px;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(15px);
-  border-right: 1px solid rgba(0, 0, 0, 0.05);
-  box-shadow: 2px 0 15px rgba(0, 0, 0, 0.03);
+.bottom-card.card-collapsed {
+  max-height: 16.67vh; /* 收起状态：六分之一屏幕 (100/6) */
+  min-height: 16.67vh;
+}
+
+.card-handle {
+  padding: 12px 0 8px;
   display: flex;
   flex-direction: column;
-  transition: all 0.25s ease-out;
-  z-index: 100;
-}
-
-.sidebar.collapsed {
-  width: 60px;
-}
-
-.sidebar-header {
-  padding: 20px 15px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 60px;
-}
-
-.sidebar.collapsed .sidebar-header {
-  padding: 20px 15px;
   justify-content: center;
-}
-
-.sidebar-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #081c54;
-  margin: 0;
-  transition: opacity 0.25s ease-out;
-}
-
-.sidebar-toggle {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.05);
-  display: flex;
   align-items: center;
-  justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  flex-shrink: 0;
-  color: #081c54;
+  user-select: none;
+  -webkit-user-select: none;
+  min-height: 60px;
+  touch-action: none; /* 禁用默认触摸行为 */
+  -webkit-touch-callout: none; /* 禁用iOS长按菜单 */
+  -webkit-user-select: none; /* 禁用文本选择 */
 }
 
-.sidebar-toggle:hover {
+.card-handle:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.card-handle:active {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* 拖拽时的滑条样式 */
+.bottom-card.dragging .card-handle {
   background: rgba(0, 0, 0, 0.08);
-  transform: scale(1.05);
+  transform: scale(1.02);
 }
 
-.sidebar.collapsed .sidebar-toggle {
-  background: rgba(8, 28, 84, 0.1);
+.handle-bar {
+  width: 50px;
+  height: 5px;
+  background: #d0d0d0;
+  border-radius: 3px;
+  transition: all 0.3s ease;
 }
 
-.sidebar.collapsed .sidebar-toggle:hover {
-  background: rgba(8, 28, 84, 0.2);
+.card-handle:hover .handle-bar {
+  background: #b0b0b0;
 }
 
-.sidebar-content {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 20px 15px;
-  transition: all 0.25s ease-out;
-  transform-origin: top;
+/* 拖拽时的滑条样式 */
+.bottom-card.dragging .handle-bar {
+  background: #999;
+  transform: scale(1.1);
 }
 
-.sidebar-content.collapsed {
-  padding: 0 20px;
-  transform: scaleY(0);
-  opacity: 0;
-}
-
-/* 筛选器 */
-.volkswagen-filters {
-  margin-bottom: 24px;
-}
-
-/* 动画关键帧 */
-@keyframes slideInFromLeft {
-  0% {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes fadeInUp {
-  0% {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* 动画类 */
-.animate-in .filter-chip,
-.animate-in .volkswagen-station-item {
-  animation: slideInFromLeft 0.25s ease-out forwards;
-}
-
-.animate-in .filter-group {
-  animation: fadeInUp 0.25s ease-out forwards;
-}
-
-.station-list-container.animate-in .list-header {
-  animation: fadeInUp 0.25s ease-out 0.1s forwards;
-  opacity: 0;
-}
-
-.filter-group {
-  margin-bottom: 20px;
-}
-
-.filter-group label {
-  display: block;
-  font-size: 12px;
+.handle-text {
+  font-size: 13px;
   color: #666;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  margin-top: 6px;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+.collapsed-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 0 8px;
+  color: #999;
+  font-size: 11px;
+  gap: 2px;
+}
+
+/* 收起预览区样式 */
+.collapsed-preview {
+  padding: 6px 12px 12px;
+}
+
+.collapsed-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #666;
+  font-size: 12px;
   margin-bottom: 8px;
 }
 
-.filter-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-}
-
-.filter-chip {
-  padding: 7px 14px;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 20px;
-  font-size: 12px;
-  color: #081c54;
-  cursor: pointer;
-  transition: all 0.25s ease-out;
-  opacity: 0;
-  transform: translateX(-10px);
-  backdrop-filter: blur(5px);
-}
-
-.filter-chip:hover {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(0, 0, 0, 0.12);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.filter-chip.active {
-  background: #081c54;
-  border-color: #081c54;
-  color: #fff;
-  box-shadow: 0 2px 10px rgba(8, 28, 84, 0.2);
-}
-
-/* 充电桩列表 */
-.station-list-container {
-  flex: 1;
-}
-
-.list-header {
-  margin-bottom: 16px;
-}
-
-.count {
-  font-size: 12px;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.station-list {
+.collapsed-items {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
-.volkswagen-station-item {
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 12px;
-  padding: 16px;
-  cursor: pointer;
-  transition: all 0.25s ease-out;
-  opacity: 0;
-  transform: translateX(-10px);
-  backdrop-filter: blur(5px);
+.collapsed-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f7f8fa;
 }
 
-.volkswagen-station-item:hover {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(8, 28, 84, 0.3);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+.collapsed-item-left {
+  min-width: 0;
 }
 
-.volkswagen-station-item.selected {
-  background: rgba(8, 28, 84, 0.05);
-  border-color: #081c54;
-  box-shadow: 0 4px 15px rgba(8, 28, 84, 0.1);
+.collapsed-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #081c54;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collapsed-sub {
+  font-size: 12px;
+  color: #888;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collapsed-item-right {
+  text-align: right;
+}
+
+.collapsed-distance {
+  font-size: 12px;
+  color: #333;
+}
+
+.collapsed-availability {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 2px;
+}
+
+.collapsed-availability .c-fast,
+.collapsed-availability .c-slow {
+  font-size: 12px;
+  color: #555;
+}
+
+.card-content {
+  padding: 0 20px 20px;
 }
 
 .station-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.station-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #081c54;
+  margin: 0;
+  flex: 1;
+  margin-right: 12px;
+}
+
+.station-distance {
+  font-size: 14px;
+  color: #666;
+  background: #f0f0f0;
+  padding: 4px 8px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.station-info {
+  margin-bottom: 16px;
+}
+
+.station-address {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.station-tags {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tag-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.tag.fast-charge {
+  background: rgba(52, 199, 89, 0.15);
+  color: #34c759;
+}
+
+.tag.slow-charge {
+  background: rgba(255, 149, 0, 0.15);
+  color: #ff9500;
+}
+
+.price-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.price {
+  font-size: 16px;
+  font-weight: 600;
+  color: #081c54;
+}
+
+.brand {
+  font-size: 12px;
+  color: #666;
+  background: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 8px;
+}
+
+.station-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.station-actions .van-button {
+  flex: 1;
+}
+
+/* 站点列表 */
+.station-list {
+  padding: 0 16px 20px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.location-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #666;
+  font-size: 14px;
+}
+
+.location-text {
+  font-weight: 500;
+}
+
+.list-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* 排序和筛选栏 */
+.sort-filter-bar {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+  gap: 12px;
+}
+
+.sort-filter-bar .van-dropdown-menu {
+  flex: 1;
+}
+
+.filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border: none;
+  border-radius: 6px;
+  color: #666;
+  font-size: 14px;
+}
+
+/* 站点列表项 */
+.station-items {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-top: 8px;
+  max-height: calc(75vh - 110px); /* 减去头部和筛选栏的高度 */
+  -webkit-overflow-scrolling: touch; /* iOS平滑滚动 */
+}
+
+/* 滚动条样式 */
+.station-items::-webkit-scrollbar {
+  width: 4px;
+}
+
+.station-items::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.station-items::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 2px;
+}
+
+.station-items::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.station-item {
+  padding: 16px 0;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.station-item:last-child {
+  border-bottom: none;
+}
+
+.station-item.item-selected {
+  background: rgba(8, 28, 84, 0.05);
+  border-radius: 8px;
+  padding: 16px 12px;
+  margin: 0 -12px;
+}
+
+.station-item:active {
+  background: #f8f9fa;
+}
+
+/* 站点标题和标签 */
+.item-title {
   margin-bottom: 8px;
 }
 
@@ -704,275 +1163,163 @@ onMounted(async () => {
   font-size: 16px;
   font-weight: 600;
   color: #081c54;
-  margin: 0;
-  flex: 1;
+  margin: 0 0 8px 0;
+  line-height: 1.3;
 }
 
-.station-status {
-  padding: 4px 8px;
+.station-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
   border-radius: 4px;
   font-size: 11px;
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
-.station-status.status-free {
-  background: rgba(52, 199, 89, 0.15);
-  color: #34c759;
-  border: 1px solid rgba(52, 199, 89, 0.2);
-  border-radius: 6px;
+.tag.star-tag {
+  background: #8b4513;
+  color: white;
 }
 
-.station-status.status-partial {
-  background: rgba(255, 149, 0, 0.15);
-  color: #ff9500;
-  border: 1px solid rgba(255, 149, 0, 0.2);
-  border-radius: 6px;
+.tag.brand-tag {
+  background: #e3f2fd;
+  color: #1976d2;
 }
 
-.station-status.status-busy {
-  background: rgba(255, 59, 48, 0.15);
-  color: #ff3b30;
-  border: 1px solid rgba(255, 59, 48, 0.2);
-  border-radius: 6px;
+.tag.discount-tag {
+  background: #ffebee;
+  color: #d32f2f;
 }
 
-.station-address {
+/* 价格信息 */
+.price-section {
+  margin-bottom: 8px;
+}
+
+.main-price {
+  font-size: 18px;
+  font-weight: 700;
+  color: #d32f2f;
+  margin-bottom: 2px;
+}
+
+.price-breakdown {
   font-size: 12px;
   color: #666;
-  margin: 0 0 12px 0;
-  line-height: 1.4;
 }
 
-.station-details {
+/* 充电桩可用性 */
+.availability-section {
   display: flex;
   gap: 16px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
-.detail-item {
+.availability-item {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.detail-item .label {
-  font-size: 10px;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.detail-item .value {
-  font-size: 12px;
-  color: #081c54;
-  font-weight: 500;
-}
-
-.station-features {
-  display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: 4px;
 }
 
-.feature-tag {
-  padding: 3px 8px;
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 6px;
-  font-size: 10px;
-  color: #081c54;
-  backdrop-filter: blur(3px);
+.label {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 4px;
+  border-radius: 3px;
 }
 
-/* 地图容器 */
-.map-container {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
+.fast-label {
+  background: #e8f5e8;
+  color: #2e7d32;
 }
 
-/* 移动端悬浮按钮 */
-.mobile-floating-btn {
-  position: fixed;
-  bottom: 50px;
-  left: 10px;
-  z-index: 300;
-  background: linear-gradient(135deg, rgba(8, 28, 84, 0.6) 0%, rgba(10, 36, 104, 0.6) 100%);
-  color: white;
-  border: none;
-  border-radius: 25px;
-  padding: 12px 16px;
-  box-shadow: 0 4px 15px rgba(8, 28, 84, 0.3);
-  cursor: pointer;
-  transition: all 0.3s ease;
+.slow-label {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.count {
+  font-size: 12px;
+  color: #666;
+}
+
+/* 停车费说明 */
+.parking-info {
   display: flex;
   align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #1976d2;
+  margin-bottom: 12px;
+}
+
+/* 操作按钮 */
+.item-actions {
+  display: flex;
   gap: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  backdrop-filter: blur(10px);
 }
 
-.mobile-floating-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(8, 28, 84, 0.4);
-}
-
-.mobile-floating-btn:active {
-  transform: translateY(0);
-}
-
-.btn-text {
-  white-space: nowrap;
-  transition: opacity 0.3s ease;
+.item-actions .van-button {
+  flex: 1;
+  font-size: 12px;
 }
 
 /* 响应式设计 */
-@media (max-width: 1024px) {
-  .sidebar {
-    width: 280px;
-  }
-}
-
 @media (max-width: 768px) {
-  .sidebar {
-    position: fixed !important;
-    left: 0 !important;
-    top: 0 !important;
-    height: 100vh !important;
-    width: 85% !important;
-    max-width: 350px !important;
-    z-index: 250 !important;
-    transform: translateX(-100%) !important;
-    transition: transform 0.3s ease-out !important;
-    box-shadow: 2px 0 20px rgba(0, 0, 0, 0.15) !important;
-    background: #ffffff !important;
-    backdrop-filter: none !important;
-    /* 使用JavaScript动态调整高度 */
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch !important;
+  .mobile-header {
+    padding: 6px 12px;
   }
   
-  .sidebar:not(.collapsed) {
-    transform: translateX(0);
+  .action-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
   }
   
-  .sidebar.mobile-overlay {
-    background: #ffffff !important;
-    backdrop-filter: none !important;
+  .station-name {
+    font-size: 16px;
   }
   
-  .sidebar.mobile-overlay:not(.collapsed)::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.3);
-    z-index: -1;
-    animation: fadeIn 0.3s ease-out;
+  .station-actions {
+    flex-direction: column;
   }
   
-  .main-content {
-    padding-left: 0;
+  /* 移动端调整底部卡片高度 */
+  .bottom-card {
+    max-height: 30vh; /* 移动端默认稍大一些 */
   }
   
-  .map-container {
-    width: 100%;
+  .bottom-card.card-expanded,
+  .bottom-card.list-expanded {
+    max-height: 80vh; /* 移动端列表状态更大 */
   }
   
-  /* 强制移动端侧边栏为白色背景 */
-  .sidebar,
-  .sidebar.mobile-overlay,
-  .sidebar-content,
-  .sidebar-header,
-  .volkswagen-filters,
-  .station-list-container {
-    background: #ffffff !important;
-    background-color: #ffffff !important;
+  .bottom-card.card-collapsed {
+    max-height: 20vh; /* 移动端收起状态稍大 */
+    min-height: 20vh;
   }
   
-  /* 确保移动端侧边栏内容区域也是白色，但保持按钮样式 */
-  .sidebar .filter-chip {
-    background: rgba(255, 255, 255, 0.7) !important;
-    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  .map-fullscreen {
+    bottom: 20vh; /* 移动端距离底部20vh（收起状态） */
+    height: calc(100vh - 60px - 20vh); /* 移动端固定高度 */
+    overflow: hidden; /* 禁用滚动 */
   }
   
-  .sidebar .filter-chip.active {
-    background: #081c54 !important;
-    border-color: #081c54 !important;
-    color: #fff !important;
+  /* 移动端滚动优化 */
+  .station-items {
+    max-height: calc(80vh - 110px); /* 移动端滚动区域 */
+    padding-bottom: 20px; /* 底部留白 */
   }
   
-  .sidebar .volkswagen-station-item {
-    background: rgba(255, 255, 255, 0.9) !important;
-  }
-  
-  .sidebar .volkswagen-search {
-    background: rgba(255, 255, 255, 0.8) !important;
-    /* 防止输入法弹出时影响布局 */
-    font-size: 16px; /* 防止iOS缩放 */
-    transform: translateZ(0); /* 启用硬件加速 */
-  }
-  
-  
-  /* 移动端输入框优化 */
-  .sidebar input[type="text"] {
-    font-size: 16px !important; /* 防止iOS自动缩放 */
-    transform: translateZ(0); /* 启用硬件加速 */
-  }
-  
-  /* 防止输入法弹出时页面滚动 */
-  .sidebar:not(.collapsed) {
-    position: fixed !important;
-    height: 100vh !important;
-    max-height: 100vh !important;
-  }
-}
-
-@media (max-width: 480px) {
-  .volkswagen-header {
-    padding: 0 16px;
-  }
-  
-  .logo-text {
-    font-size: 20px;
-  }
-}
-
-/* 移动端输入法适配 */
-@media (max-width: 768px) {
-  /* 防止输入法弹出时页面布局变化 */
-  .volkswagen-container {
-    height: 100vh;
-    height: -webkit-fill-available; /* iOS Safari */
-    overflow: hidden;
-  }
-  
-  .main-content {
-    height: 100vh;
-    height: -webkit-fill-available; /* iOS Safari */
-  }
-  
-  /* 输入框聚焦时的处理 */
-  .sidebar input:focus {
-    position: relative;
-    z-index: 1000;
-  }
-  
-  /* 简化的移动端侧边栏样式 */
-  .sidebar.mobile-overlay:not(.collapsed) {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    height: 100vh !important;
-    width: 85% !important;
-    max-width: 350px !important;
-    z-index: 250 !important;
-    transform: translateX(0) !important;
-    overflow-y: auto !important;
+  .station-item {
+    padding: 20px 0; /* 移动端更大的点击区域 */
   }
 }
 </style>

@@ -1,0 +1,1097 @@
+{
+    "stationDetails": [
+        {
+            "address": "安徽省合肥市包河区合肥南站地下停车场",
+            "busineHours": "周一至周日00:00-24:00",
+            "chargeModes": [2, 3],
+            "electricityFee": "电费:00:00~07:00:0.60,07:00~10:00:1.20,10:00~15:00:1.20,15:00~18:00:1.20,18:00~21:00:1.20,21:00~23:00:1.20,23:00~24:00:0.60",
+            "operatorId": "VW_CHARGE_001",
+            "parkFee": "前2小时免费停车，超出时间参考价格：5元/小时（以实际收取为准）",
+            "parkMode": 3,
+            "parkNums": 0,
+            "fastConnectors": [
+                {
+                    "connectorId": "VW_CONNECTOR_001_01",
+                    "connectorName": "快充枪1",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "VW_CONNECTOR_001_02",
+                    "connectorName": "快充枪2",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "VW_CONNECTOR_001_03",
+                    "connectorName": "快充枪3",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "VW_CONNECTOR_001_04",
+                    "connectorName": "快充枪4",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "VW_CONNECTOR_001_05",
+                    "connectorName": "快充枪5",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "VW_CONNECTOR_001_06",
+                    "connectorName": "快充枪6",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "VW_CONNECTOR_001_07",
+                    "connectorName": "快充枪7",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "VW_CONNECTOR_001_08",
+                    "connectorName": "快充枪8",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "VW_CONNECTOR_001_09",
+                    "connectorName": "快充枪9",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "VW_CONNECTOR_001_10",
+                    "connectorName": "快充枪10",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "VW_CONNECTOR_001_11",
+                    "connectorName": "快充枪11",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "VW_CONNECTOR_001_12",
+                    "connectorName": "快充枪12",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                }
+            ],
+            "slowConnectors": [
+                {
+                    "connectorId": "VW_CONNECTOR_002_S01",
+                    "connectorName": "慢充枪1",
+                    "connectorType": 3,
+                    "lockFlag": 0,
+                    "power": 7.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "VW_CONNECTOR_002_S02",
+                    "connectorName": "慢充枪2",
+                    "connectorType": 3,
+                    "lockFlag": 0,
+                    "power": 7.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "VW_CONNECTOR_002_S03",
+                    "connectorName": "慢充枪3",
+                    "connectorType": 3,
+                    "lockFlag": 0,
+                    "power": 7.00,
+                    "sortLabel": 0,
+                    "status": 1
+                }
+            ],
+            "periodPrices": [
+                {
+                    "eleFee": "0.60",
+                    "endTime": "07:00",
+                    "serviceFee": "0.60",
+                    "startTime": "00:00",
+                    "totalFee": "1.20"
+                },
+                {
+                    "currentFlag": true,
+                    "eleFee": "1.20",
+                    "endTime": "10:00",
+                    "serviceFee": "0.60",
+                    "startTime": "07:00",
+                    "totalFee": "1.80"
+                },
+                {
+                    "eleFee": "1.20",
+                    "endTime": "15:00",
+                    "serviceFee": "0.60",
+                    "startTime": "10:00",
+                    "totalFee": "1.80"
+                },
+                {
+                    "eleFee": "1.20",
+                    "endTime": "18:00",
+                    "serviceFee": "0.60",
+                    "startTime": "15:00",
+                    "totalFee": "1.80"
+                },
+                {
+                    "eleFee": "1.20",
+                    "endTime": "21:00",
+                    "serviceFee": "0.60",
+                    "startTime": "18:00",
+                    "totalFee": "1.80"
+                },
+                {
+                    "eleFee": "1.20",
+                    "endTime": "23:00",
+                    "serviceFee": "0.60",
+                    "startTime": "21:00",
+                    "totalFee": "1.80"
+                },
+                {
+                    "eleFee": "0.60",
+                    "endTime": "24:00",
+                    "serviceFee": "0.60",
+                    "startTime": "23:00",
+                    "totalFee": "1.20"
+                }
+            ],
+            "pictures": [
+                "https://resource.teld.cn/teldimage/134/9ddad89384494b93abec6dd72d301d7e.jpg",
+                "https://resource.teld.cn/teldimage/134/886573f480124952949575a120481c7a.jpg",
+                "https://resource.teld.cn/teldimage/134/57cf9722387a4da99936568c72586a8a.jpg",
+                "https://resource.teld.cn/teldimage/134/87271b222f52470db39b540f41e47747.jpg",
+                "https://resource.teld.cn/teldimage/134/68d182d6c5104029a720b56d5d9cd493.jpg"
+            ],
+            "quickAvailableCount": 8,
+            "quickTotalCount": 12,
+            "serviceFee": "服务费:00:00~07:00:0.6,07:00~10:00:0.6,10:00~15:00:0.6,15:00~18:00:0.6,18:00~21:00:0.6,21:00~23:00:0.6,23:00~24:00:0.6",
+            "serviceTel": "400-888-0001",
+            "siteGuide": "合肥南站地下停车场B1层，靠近东侧入口",
+            "slowAvailableCount": 4,
+            "slowTotalCount": 8,
+            "stationId": "VW_STATION_001",
+            "stationLat": 31.7849,
+            "stationLng": 117.2272,
+            "stationName": "合肥南站充电中心",
+            "stationStatus": 0,
+            "stationTel": "400-888-0001"
+        },
+        {
+            "address": "安徽省合肥市蜀山区天鹅湖万达广场地下停车场",
+            "busineHours": "周一至周日08:00-22:00",
+            "chargeModes": [2],
+            "electricityFee": "电费:08:00~22:00:1.30",
+            "operatorId": "WANDA_CHARGE_001",
+            "parkFee": "购物满100元免费停车2小时，超出时间参考价格：5元/小时",
+            "parkMode": 2,
+            "parkNums": 0,
+            "fastConnectors": [
+                {
+                    "connectorId": "WANDA_CONNECTOR_001_01",
+                    "connectorName": "快充枪1",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "WANDA_CONNECTOR_001_02",
+                    "connectorName": "快充枪2",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "WANDA_CONNECTOR_001_03",
+                    "connectorName": "快充枪3",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "WANDA_CONNECTOR_001_04",
+                    "connectorName": "快充枪4",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "WANDA_CONNECTOR_001_05",
+                    "connectorName": "快充枪5",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "WANDA_CONNECTOR_001_06",
+                    "connectorName": "快充枪6",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "WANDA_CONNECTOR_001_07",
+                    "connectorName": "快充枪7",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "WANDA_CONNECTOR_001_08",
+                    "connectorName": "快充枪8",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                }
+            ],
+            "periodPrices": [
+                {
+                    "eleFee": "1.30",
+                    "endTime": "22:00",
+                    "serviceFee": "0.60",
+                    "startTime": "08:00",
+                    "totalFee": "1.90"
+                }
+            ],
+            "pictures": [
+                "https://resource.teld.cn/teldimage/135/wanda_mall_01.jpg",
+                "https://resource.teld.cn/teldimage/135/wanda_mall_02.jpg",
+                "https://resource.teld.cn/teldimage/135/wanda_mall_03.jpg"
+            ],
+            "quickAvailableCount": 6,
+            "quickTotalCount": 8,
+            "serviceFee": "服务费:08:00~22:00:0.6",
+            "serviceTel": "400-888-0002",
+            "siteGuide": "天鹅湖万达广场地下停车场B2层，靠近电梯口",
+            "slowAvailableCount": 0,
+            "slowTotalCount": 0,
+            "stationId": "WANDA_STATION_001",
+            "stationLat": 31.8209,
+            "stationLng": 117.2262,
+            "stationName": "天鹅湖万达充电站",
+            "stationStatus": 0,
+            "stationTel": "400-888-0002"
+        },
+        {
+            "address": "安徽省合肥市包河区屯溪路193号合肥工业大学",
+            "busineHours": "周一至周日06:00-23:00",
+            "chargeModes": [3],
+            "electricityFee": "电费:06:00~23:00:1.00",
+            "operatorId": "CAMPUS_CHARGE_001",
+            "parkFee": "校园内免费停车",
+            "parkMode": 1,
+            "parkNums": 0,
+            "fastConnectors": [],
+            "periodPrices": [
+                {
+                    "eleFee": "1.00",
+                    "endTime": "23:00",
+                    "serviceFee": "0.60",
+                    "startTime": "06:00",
+                    "totalFee": "1.60"
+                }
+            ],
+            "pictures": [
+                "https://resource.teld.cn/teldimage/136/hfut_campus_01.jpg",
+                "https://resource.teld.cn/teldimage/136/hfut_campus_02.jpg",
+                "https://resource.teld.cn/teldimage/136/hfut_campus_03.jpg"
+            ],
+            "quickAvailableCount": 0,
+            "quickTotalCount": 0,
+            "serviceFee": "服务费:06:00~23:00:0.6",
+            "serviceTel": "400-888-0003",
+            "siteGuide": "合肥工业大学屯溪路校区，靠近图书馆",
+            "slowAvailableCount": 6,
+            "slowTotalCount": 8,
+            "stationId": "CAMPUS_STATION_001",
+            "stationLat": 31.8631,
+            "stationLng": 117.2806,
+            "stationName": "合肥工业大学充电站",
+            "stationStatus": 0,
+            "stationTel": "400-888-0003"
+        },
+        {
+            "address": "安徽省合肥市包河区滨湖新区徽州大道与紫云路交叉口",
+            "busineHours": "周一至周日00:00-24:00",
+            "chargeModes": [2, 3],
+            "electricityFee": "电费:00:00~07:00:0.60,07:00~10:00:1.25,10:00~15:00:1.25,15:00~18:00:1.25,18:00~21:00:1.25,21:00~23:00:1.25,23:00~24:00:0.60",
+            "operatorId": "VW_CHARGE_002",
+            "parkFee": "24小时免费停车",
+            "parkMode": 1,
+            "parkNums": 0,
+            "fastConnectors": [
+                {
+                    "connectorId": "VW_CONNECTOR_002_01",
+                    "connectorName": "快充枪1",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "VW_CONNECTOR_002_02",
+                    "connectorName": "快充枪2",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "VW_CONNECTOR_002_03",
+                    "connectorName": "快充枪3",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "VW_CONNECTOR_002_04",
+                    "connectorName": "快充枪4",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "VW_CONNECTOR_002_05",
+                    "connectorName": "快充枪5",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "VW_CONNECTOR_002_06",
+                    "connectorName": "快充枪6",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "VW_CONNECTOR_002_07",
+                    "connectorName": "快充枪7",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "VW_CONNECTOR_002_08",
+                    "connectorName": "快充枪8",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                }
+            ],
+            "periodPrices": [
+                {
+                    "eleFee": "0.60",
+                    "endTime": "07:00",
+                    "serviceFee": "0.60",
+                    "startTime": "00:00",
+                    "totalFee": "1.20"
+                },
+                {
+                    "currentFlag": true,
+                    "eleFee": "1.25",
+                    "endTime": "10:00",
+                    "serviceFee": "0.60",
+                    "startTime": "07:00",
+                    "totalFee": "1.85"
+                },
+                {
+                    "eleFee": "1.25",
+                    "endTime": "15:00",
+                    "serviceFee": "0.60",
+                    "startTime": "10:00",
+                    "totalFee": "1.85"
+                },
+                {
+                    "eleFee": "1.25",
+                    "endTime": "18:00",
+                    "serviceFee": "0.60",
+                    "startTime": "15:00",
+                    "totalFee": "1.85"
+                },
+                {
+                    "eleFee": "1.25",
+                    "endTime": "21:00",
+                    "serviceFee": "0.60",
+                    "startTime": "18:00",
+                    "totalFee": "1.85"
+                },
+                {
+                    "eleFee": "1.25",
+                    "endTime": "23:00",
+                    "serviceFee": "0.60",
+                    "startTime": "21:00",
+                    "totalFee": "1.85"
+                },
+                {
+                    "eleFee": "0.60",
+                    "endTime": "24:00",
+                    "serviceFee": "0.60",
+                    "startTime": "23:00",
+                    "totalFee": "1.20"
+                }
+            ],
+            "pictures": [
+                "https://resource.teld.cn/teldimage/137/binhu_01.jpg",
+                "https://resource.teld.cn/teldimage/137/binhu_02.jpg",
+                "https://resource.teld.cn/teldimage/137/binhu_03.jpg"
+            ],
+            "quickAvailableCount": 2,
+            "quickTotalCount": 8,
+            "serviceFee": "服务费:00:00~07:00:0.6,07:00~10:00:0.6,10:00~15:00:0.6,15:00~18:00:0.6,18:00~21:00:0.6,21:00~23:00:0.6,23:00~24:00:0.6",
+            "serviceTel": "400-888-0004",
+            "siteGuide": "滨湖新区徽州大道与紫云路交叉口，靠近地铁站",
+            "slowAvailableCount": 1,
+            "slowTotalCount": 8,
+            "stationId": "VW_STATION_002",
+            "stationLat": 31.7409,
+            "stationLng": 117.3062,
+            "stationName": "滨湖新区充电站",
+            "stationStatus": 0,
+            "stationTel": "400-888-0004"
+        },
+        {
+            "address": "安徽省合肥市蜀山区合肥新桥国际机场停车场",
+            "busineHours": "周一至周日00:00-24:00",
+            "chargeModes": [2],
+            "electricityFee": "电费:00:00~24:00:1.40",
+            "operatorId": "AIRPORT_CHARGE_001",
+            "parkFee": "机场停车费8元/小时",
+            "parkMode": 2,
+            "parkNums": 0,
+            "fastConnectors": [
+                {
+                    "connectorId": "AIRPORT_CONNECTOR_001_01",
+                    "connectorName": "快充枪1",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "AIRPORT_CONNECTOR_001_02",
+                    "connectorName": "快充枪2",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "AIRPORT_CONNECTOR_001_03",
+                    "connectorName": "快充枪3",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "AIRPORT_CONNECTOR_001_04",
+                    "connectorName": "快充枪4",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "AIRPORT_CONNECTOR_001_05",
+                    "connectorName": "快充枪5",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "AIRPORT_CONNECTOR_001_06",
+                    "connectorName": "快充枪6",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "AIRPORT_CONNECTOR_001_07",
+                    "connectorName": "快充枪7",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "AIRPORT_CONNECTOR_001_08",
+                    "connectorName": "快充枪8",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "AIRPORT_CONNECTOR_001_09",
+                    "connectorName": "快充枪9",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "AIRPORT_CONNECTOR_001_10",
+                    "connectorName": "快充枪10",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "AIRPORT_CONNECTOR_001_11",
+                    "connectorName": "快充枪11",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "AIRPORT_CONNECTOR_001_12",
+                    "connectorName": "快充枪12",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "AIRPORT_CONNECTOR_001_13",
+                    "connectorName": "快充枪13",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "AIRPORT_CONNECTOR_001_14",
+                    "connectorName": "快充枪14",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "AIRPORT_CONNECTOR_001_15",
+                    "connectorName": "快充枪15",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                }
+            ],
+            "periodPrices": [
+                {
+                    "eleFee": "1.40",
+                    "endTime": "24:00",
+                    "serviceFee": "0.60",
+                    "startTime": "00:00",
+                    "totalFee": "2.00"
+                }
+            ],
+            "pictures": [
+                "https://resource.teld.cn/teldimage/138/airport_01.jpg",
+                "https://resource.teld.cn/teldimage/138/airport_02.jpg",
+                "https://resource.teld.cn/teldimage/138/airport_03.jpg",
+                "https://resource.teld.cn/teldimage/138/airport_04.jpg"
+            ],
+            "quickAvailableCount": 12,
+            "quickTotalCount": 15,
+            "serviceFee": "服务费:00:00~24:00:0.6",
+            "serviceTel": "400-888-0005",
+            "siteGuide": "合肥新桥国际机场停车场，靠近航站楼入口",
+            "slowAvailableCount": 0,
+            "slowTotalCount": 0,
+            "stationId": "AIRPORT_STATION_001",
+            "stationLat": 31.9889,
+            "stationLng": 116.9782,
+            "stationName": "合肥新桥国际机场充电站",
+            "stationStatus": 0,
+            "stationTel": "400-888-0005"
+        },
+        {
+            "address": "安徽省合肥市蜀山区政务区潜山路与习友路交叉口",
+            "busineHours": "周一至周日00:00-24:00",
+            "chargeModes": [2, 3],
+            "electricityFee": "电费:00:00~07:00:0.60,07:00~10:00:1.20,10:00~15:00:1.20,15:00~18:00:1.20,18:00~21:00:1.20,21:00~23:00:1.20,23:00~24:00:0.60",
+            "operatorId": "GOV_CHARGE_001",
+            "parkFee": "政务区免费停车",
+            "parkMode": 1,
+            "parkNums": 0,
+            "fastConnectors": [
+                {
+                    "connectorId": "GOV_CONNECTOR_001_01",
+                    "connectorName": "快充枪1",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "GOV_CONNECTOR_001_02",
+                    "connectorName": "快充枪2",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "GOV_CONNECTOR_001_03",
+                    "connectorName": "快充枪3",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "GOV_CONNECTOR_001_04",
+                    "connectorName": "快充枪4",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "GOV_CONNECTOR_001_05",
+                    "connectorName": "快充枪5",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "GOV_CONNECTOR_001_06",
+                    "connectorName": "快充枪6",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "GOV_CONNECTOR_001_07",
+                    "connectorName": "快充枪7",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "GOV_CONNECTOR_001_08",
+                    "connectorName": "快充枪8",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "GOV_CONNECTOR_001_09",
+                    "connectorName": "快充枪9",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "GOV_CONNECTOR_001_10",
+                    "connectorName": "快充枪10",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "GOV_CONNECTOR_001_11",
+                    "connectorName": "快充枪11",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "GOV_CONNECTOR_001_12",
+                    "connectorName": "快充枪12",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                }
+            ],
+            "periodPrices": [
+                {
+                    "eleFee": "0.60",
+                    "endTime": "07:00",
+                    "serviceFee": "0.60",
+                    "startTime": "00:00",
+                    "totalFee": "1.20"
+                },
+                {
+                    "currentFlag": true,
+                    "eleFee": "1.20",
+                    "endTime": "10:00",
+                    "serviceFee": "0.60",
+                    "startTime": "07:00",
+                    "totalFee": "1.80"
+                },
+                {
+                    "eleFee": "1.20",
+                    "endTime": "15:00",
+                    "serviceFee": "0.60",
+                    "startTime": "10:00",
+                    "totalFee": "1.80"
+                },
+                {
+                    "eleFee": "1.20",
+                    "endTime": "18:00",
+                    "serviceFee": "0.60",
+                    "startTime": "15:00",
+                    "totalFee": "1.80"
+                },
+                {
+                    "eleFee": "1.20",
+                    "endTime": "21:00",
+                    "serviceFee": "0.60",
+                    "startTime": "18:00",
+                    "totalFee": "1.80"
+                },
+                {
+                    "eleFee": "1.20",
+                    "endTime": "23:00",
+                    "serviceFee": "0.60",
+                    "startTime": "21:00",
+                    "totalFee": "1.80"
+                },
+                {
+                    "eleFee": "0.60",
+                    "endTime": "24:00",
+                    "serviceFee": "0.60",
+                    "startTime": "23:00",
+                    "totalFee": "1.20"
+                }
+            ],
+            "pictures": [
+                "https://resource.teld.cn/teldimage/139/gov_01.jpg",
+                "https://resource.teld.cn/teldimage/139/gov_02.jpg",
+                "https://resource.teld.cn/teldimage/139/gov_03.jpg"
+            ],
+            "quickAvailableCount": 8,
+            "quickTotalCount": 12,
+            "serviceFee": "服务费:00:00~07:00:0.6,07:00~10:00:0.6,10:00~15:00:0.6,15:00~18:00:0.6,18:00~21:00:0.6,21:00~23:00:0.6,23:00~24:00:0.6",
+            "serviceTel": "400-888-0006",
+            "siteGuide": "政务区潜山路与习友路交叉口，靠近政府大楼",
+            "slowAvailableCount": 4,
+            "slowTotalCount": 12,
+            "stationId": "GOV_STATION_001",
+            "stationLat": 31.8209,
+            "stationLng": 117.2262,
+            "stationName": "政务区充电中心",
+            "stationStatus": 0,
+            "stationTel": "400-888-0006"
+        },
+        {
+            "address": "安徽省合肥市瑶海区瑶海万达广场地下停车场",
+            "busineHours": "周一至周日08:00-22:00",
+            "chargeModes": [2],
+            "electricityFee": "电费:08:00~22:00:1.30",
+            "operatorId": "WANDA_CHARGE_002",
+            "parkFee": "购物满100元免费停车2小时，超出时间参考价格：5元/小时",
+            "parkMode": 2,
+            "parkNums": 0,
+            "fastConnectors": [
+                {
+                    "connectorId": "WANDA_CONNECTOR_002_01",
+                    "connectorName": "快充枪1",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "WANDA_CONNECTOR_002_02",
+                    "connectorName": "快充枪2",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "WANDA_CONNECTOR_002_03",
+                    "connectorName": "快充枪3",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "WANDA_CONNECTOR_002_04",
+                    "connectorName": "快充枪4",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "WANDA_CONNECTOR_002_05",
+                    "connectorName": "快充枪5",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "WANDA_CONNECTOR_002_06",
+                    "connectorName": "快充枪6",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "WANDA_CONNECTOR_002_07",
+                    "connectorName": "快充枪7",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "WANDA_CONNECTOR_002_08",
+                    "connectorName": "快充枪8",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                }
+            ],
+            "periodPrices": [
+                {
+                    "eleFee": "1.30",
+                    "endTime": "22:00",
+                    "serviceFee": "0.60",
+                    "startTime": "08:00",
+                    "totalFee": "1.90"
+                }
+            ],
+            "pictures": [
+                "https://resource.teld.cn/teldimage/140/yaohai_wanda_01.jpg",
+                "https://resource.teld.cn/teldimage/140/yaohai_wanda_02.jpg",
+                "https://resource.teld.cn/teldimage/140/yaohai_wanda_03.jpg"
+            ],
+            "quickAvailableCount": 7,
+            "quickTotalCount": 8,
+            "serviceFee": "服务费:08:00~22:00:0.6",
+            "serviceTel": "400-888-0007",
+            "siteGuide": "瑶海万达广场地下停车场B2层，靠近电梯口",
+            "slowAvailableCount": 0,
+            "slowTotalCount": 0,
+            "stationId": "WANDA_STATION_002",
+            "stationLat": 31.8631,
+            "stationLng": 117.3206,
+            "stationName": "瑶海万达充电站",
+            "stationStatus": 0,
+            "stationTel": "400-888-0007"
+        },
+        {
+            "address": "安徽省合肥市庐阳区淮河路步行街地下停车场",
+            "busineHours": "周一至周日09:00-21:00",
+            "chargeModes": [2],
+            "electricityFee": "电费:09:00~21:00:1.35",
+            "operatorId": "STAR_CHARGE_001",
+            "parkFee": "步行街停车费6元/小时",
+            "parkMode": 2,
+            "parkNums": 0,
+            "fastConnectors": [
+                {
+                    "connectorId": "STAR_CONNECTOR_001_01",
+                    "connectorName": "快充枪1",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "STAR_CONNECTOR_001_02",
+                    "connectorName": "快充枪2",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "STAR_CONNECTOR_001_03",
+                    "connectorName": "快充枪3",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "STAR_CONNECTOR_001_04",
+                    "connectorName": "快充枪4",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 120.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "STAR_CONNECTOR_001_05",
+                    "connectorName": "快充枪5",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                },
+                {
+                    "connectorId": "STAR_CONNECTOR_001_06",
+                    "connectorName": "快充枪6",
+                    "connectorType": 4,
+                    "lockFlag": 0,
+                    "power": 60.00,
+                    "sortLabel": 0,
+                    "status": 1
+                }
+            ],
+            "periodPrices": [
+                {
+                    "eleFee": "1.35",
+                    "endTime": "21:00",
+                    "serviceFee": "0.65",
+                    "startTime": "09:00",
+                    "totalFee": "2.00"
+                }
+            ],
+            "pictures": [
+                "https://resource.teld.cn/teldimage/141/huaihe_01.jpg",
+                "https://resource.teld.cn/teldimage/141/huaihe_02.jpg",
+                "https://resource.teld.cn/teldimage/141/huaihe_03.jpg"
+            ],
+            "quickAvailableCount": 4,
+            "quickTotalCount": 6,
+            "serviceFee": "服务费:09:00~21:00:0.65",
+            "serviceTel": "400-888-0008",
+            "siteGuide": "淮河路步行街地下停车场，靠近商业街入口",
+            "slowAvailableCount": 0,
+            "slowTotalCount": 0,
+            "stationId": "STAR_STATION_001",
+            "stationLat": 31.8631,
+            "stationLng": 117.2806,
+            "stationName": "淮河路步行街充电站",
+            "stationStatus": 0,
+            "stationTel": "400-888-0008"
+        }
+    ]
+}

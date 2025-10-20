@@ -3,9 +3,9 @@
     <!-- 卡片头部 -->
     <div class="card-header">
       <div class="station-info">
-        <h3 class="station-name">{{ station.name }}</h3>
-        <div class="station-status" :class="getStatusClass(station.status)">
-          {{ station.status }}
+        <h3 class="station-name">{{ station.stationName }}</h3>
+        <div class="station-status" :class="getStatusClass(station.openStatus)">
+          {{ station.openStatus === 1 ? '营业中' : '暂停营业' }}
         </div>
       </div>
       <div class="station-distance">
@@ -25,34 +25,28 @@
       <div class="detail-row">
         <div class="detail-item">
           <span class="label">价格</span>
-          <span class="value">¥{{ station.price }}/kWh</span>
+          <span class="value">¥{{ station.totalCostPrice }}/kWh</span>
         </div>
         <div class="detail-item">
-          <span class="label">可用</span>
-          <span class="value">{{ station.availablePorts }}/{{ station.totalPorts }}</span>
+          <span class="label">快充</span>
+          <span class="value">{{ station.quickAvailableNum }}/{{ station.quickChargeNum }}</span>
         </div>
       </div>
       <div class="detail-row">
         <div class="detail-item">
-          <span class="label">功率</span>
-          <span class="value">{{ station.power.join(', ') }}</span>
+          <span class="label">慢充</span>
+          <span class="value">{{ station.slowAvailableNum }}/{{ station.slowChargeNum }}</span>
         </div>
         <div class="detail-item">
           <span class="label">营业时间</span>
-          <span class="value">{{ station.hours }}</span>
+          <span class="value">{{ station.openTime }}</span>
         </div>
       </div>
     </div>
 
-    <!-- 特色功能 -->
-    <div class="station-features" v-if="station.features && station.features.length > 0">
-      <span
-        v-for="(feature, index) in station.features.slice(0, 3)"
-        :key="index"
-        class="feature-tag"
-      >
-        {{ feature }}
-      </span>
+    <!-- 品牌信息 -->
+    <div class="station-brand">
+      <span class="brand-tag">{{ station.brandName }}</span>
     </div>
 
     <!-- 操作按钮 -->
@@ -97,18 +91,13 @@ const router = useRouter()
 
 const isSelected = computed(() => props.selected)
 
-const getStatusClass = (status) => {
-  switch (status) {
-    case '空闲': return 'status-free'
-    case '部分空闲': return 'status-partial'
-    case '繁忙': return 'status-busy'
-    default: return ''
-  }
+const getStatusClass = (openStatus) => {
+  return openStatus === 1 ? 'status-open' : 'status-closed'
 }
 
 const handleViewDetail = () => {
   emit('select', props.station)
-  router.push(`/station/${props.station.id}`)
+  router.push(`/station/${props.station.stationId}`)
 }
 
 const handleNavigate = () => {
@@ -116,8 +105,8 @@ const handleNavigate = () => {
   router.push({ 
     path: '/', 
     query: { 
-      planRoute: props.station.id, 
-      stationName: props.station.name 
+      planRoute: props.station.stationId, 
+      stationName: props.station.stationName 
     } 
   })
 }
@@ -176,19 +165,13 @@ const handleNavigate = () => {
   display: inline-block;
 }
 
-.station-status.status-free {
+.station-status.status-open {
   background: rgba(52, 199, 89, 0.15);
   color: #34c759;
   border: 1px solid rgba(52, 199, 89, 0.2);
 }
 
-.station-status.status-partial {
-  background: rgba(255, 149, 0, 0.15);
-  color: #ff9500;
-  border: 1px solid rgba(255, 149, 0, 0.2);
-}
-
-.station-status.status-busy {
+.station-status.status-closed {
   background: rgba(255, 59, 48, 0.15);
   color: #ff3b30;
   border: 1px solid rgba(255, 59, 48, 0.2);
@@ -247,14 +230,11 @@ const handleNavigate = () => {
   font-weight: 500;
 }
 
-.station-features {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+.station-brand {
   margin-bottom: 16px;
 }
 
-.feature-tag {
+.brand-tag {
   padding: 4px 8px;
   background: rgba(8, 28, 84, 0.1);
   border-radius: 6px;

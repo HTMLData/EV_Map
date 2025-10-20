@@ -1,603 +1,258 @@
 <template>
-  <div class="volkswagen-detail-container">
-    <!-- 大众风格的顶部导航栏 -->
-    <div class="volkswagen-header">
-      <div class="header-left">
-        <div class="back-button" @click="goBack">
-          <CustomIcon name="clear-route" :size="20" color="#081c54" />
-        </div>
-        <div class="logo">
-          <span class="logo-text">VOLKSWAGEN</span>
-          <span class="logo-subtitle">充电网络</span>
-        </div>
+  <div class="detail-container">
+    <!-- 顶部导航与标题 -->
+    <div class="detail-header">
+      <div class="back" @click="goBack">
+        <van-icon name="arrow-left" />
       </div>
+      <div class="title">站点详情</div>
     </div>
 
-    <!-- 主要内容区域 -->
-    <div class="main-content">
-      <!-- 充电桩基本信息 -->
-      <div class="volkswagen-station-card">
-        <div class="station-header">
-          <h1 class="station-title">{{ station?.name }}</h1>
-          <div class="status-badge" :class="getStatusClass(station?.status)">
-            {{ station?.status }}
+    <!-- 顶部图片轮播 -->
+    <div class="banner">
+      <van-skeleton :row="3" :loading="loading">
+        <van-swipe v-if="detail?.pictures?.length" class="banner-swipe" :autoplay="3000" indicator-color="#1989fa">
+          <van-swipe-item v-for="(pic, idx) in detail.pictures" :key="idx">
+            <img class="banner-img" :src="pic" alt="station" />
+          </van-swipe-item>
+        </van-swipe>
+        <div v-else class="banner-placeholder">{{ errorMsg || '暂无图片' }}</div>
+      </van-skeleton>
+          </div>
+
+    <!-- 主体卡片内容 -->
+    <div class="content">
+      <!-- 基本信息区 -->
+      <div class="card">
+        <div class="card-title">
+          <div class="name">{{ detail?.stationName || '-' }}</div>
+        </div>
+        <div class="meta">
+          <div class="meta-item">
+            <van-icon name="location-o" />
+            <span>{{ detail?.address || '-' }}</span>
+          </div>
+          <div class="meta-item">
+            <van-icon name="clock-o" />
+            <span>{{ detail?.busineHours || '营业时间暂无' }}</span>
+          </div>
+          <div class="meta-item" v-if="detail?.serviceTel">
+            <van-icon name="phone-o" />
+            <a class="tel" :href="`tel:${detail.serviceTel}`">{{ detail.serviceTel }}</a>
           </div>
         </div>
-        <p class="address">{{ station?.address }}</p>
-        <div class="station-basic-info">
-          <div class="info-item">
-            <CustomIcon name="location" :size="16" color="#081c54" />
-            <span>{{ station?.distance ? station.distance + 'km' : '定位中...' }}</span>
-          </div>
-          <div class="info-item">
-            <CustomIcon name="charging-station" :size="16" color="#52c41a" />
-            <span>{{ station?.hours }}</span>
-          </div>
-          <div class="info-item">
-            <CustomIcon name="charging-station" :size="16" color="#fa8c16" />
-            <span>{{ station?.operator }}</span>
-          </div>
+        <div class="fee" v-if="detail?.parkFee">
+          <van-icon name="info-o" />
+          <span>{{ detail.parkFee }}</span>
         </div>
       </div>
 
-      <!-- 充电设备信息 -->
-      <div class="volkswagen-section">
-        <h2 class="section-title">充电设备</h2>
-        <div class="device-info">
-          <div class="device-item">
-            <span class="label">充电桩类型</span>
-            <div class="value">
-              <span
-                v-for="(type, index) in station?.type"
-                :key="index"
-                class="volkswagen-chip"
-              >
-                {{ type }}
-              </span>
+      <!-- 充电车位区（快/慢充枪） -->
+      <div class="card">
+        <div class="section-header">充电车位</div>
+        <!-- 快充分组 -->
+        <div class="connector-group" v-if="detail?.fastConnectors?.length">
+          <div class="group-header" @click="expandFast = !expandFast">
+            <div class="group-title">快充</div>
+            <div class="group-meta">
+              <span class="badge">{{ detail.fastConnectors.length }}</span>
+              <van-icon :name="expandFast ? 'arrow-up' : 'arrow-down'" />
             </div>
           </div>
-          <div class="device-item">
-            <span class="label">充电桩状态</span>
-            <span class="value status-text" :class="getStatusClass(station?.status)">
-              {{ station?.status }}
-            </span>
+          <div class="connector-list" v-show="expandFast">
+            <div class="connector-item" v-for="c in detail.fastConnectors" :key="c.connectorId">
+              <div class="c-left">
+                <div class="c-name">{{ c.connectorName || ('#' + c.connectorId) }}</div>
+                <div class="c-sub">{{ c.power || '-' }}</div>
+              </div>
+              <div class="c-right" :class="statusClass(c.status)">{{ c.status }}</div>
+            </div>
           </div>
-          <div class="device-item">
-            <span class="label">端口数量</span>
-            <span class="value">{{ station?.totalPorts }} 个（可用：{{ station?.availablePorts }} 个）</span>
+        </div>
+        <!-- 慢充分组 -->
+        <div class="connector-group" v-if="detail?.slowConnectors?.length">
+          <div class="group-header" @click="expandSlow = !expandSlow">
+            <div class="group-title">慢充</div>
+            <div class="group-meta">
+              <span class="badge">{{ detail.slowConnectors.length }}</span>
+              <van-icon :name="expandSlow ? 'arrow-up' : 'arrow-down'" />
+            </div>
           </div>
-          <div class="device-item">
-            <span class="label">充电功率</span>
-            <span class="value">{{ station?.power.join('、') }}</span>
+          <div class="connector-list" v-show="expandSlow">
+            <div class="connector-item" v-for="c in detail.slowConnectors" :key="c.connectorId">
+              <div class="c-left">
+                <div class="c-name">{{ c.connectorName || ('#' + c.connectorId) }}</div>
+                <div class="c-sub">{{ c.power || '-' }}</div>
+              </div>
+              <div class="c-right" :class="statusClass(c.status)">{{ c.status }}</div>
           </div>
-          <div class="device-item">
-            <span class="label">充电价格</span>
-            <span class="value price">¥{{ station?.price }}/kWh</span>
           </div>
         </div>
       </div>
 
-      <!-- 设施服务 -->
-      <div class="volkswagen-section">
-        <h2 class="section-title">设施服务</h2>
-        <div class="features">
-          <div
-            v-for="(feature, index) in station?.features"
-            :key="index"
-            class="feature-item"
-          >
-            <CustomIcon name="charging-station" :size="16" color="#081c54" />
-            <span>{{ feature }}</span>
+      <!-- 分时价格区 -->
+      <div class="card">
+        <div class="section-header price-header" @click="expandPrices = !expandPrices">
+          分时价格
+          <div class="time-range" v-if="detail?.busineHours">{{ detail.busineHours }}</div>
+          <div class="price-toggle">
+            <span class="toggle-text">{{ expandPrices ? '收起' : '展开' }}</span>
+            <van-icon :name="expandPrices ? 'arrow-up' : 'arrow-down'" />
           </div>
         </div>
+        <div class="price-table" v-if="detail?.periodPrices?.length">
+          <div class="price-th">
+            <div>时段</div>
+            <div>电价(元/度)</div>
+          </div>
+          <div class="price-tr" v-for="(p, i) in displayPeriodPrices" :key="i">
+            <div>{{ p.startTime }} - {{ p.endTime }}</div>
+            <div>
+              <span v-if="p.price !== undefined">¥{{ Number(p.price).toFixed(2) }}</span>
+              <span v-else>¥{{ Number(p.totalFee || (Number(p.eleFee || 0) + Number(p.serviceFee || 0))).toFixed(2) }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="empty" v-else>暂无分时价格</div>
+        <div class="collapse-hint" v-if="!expandPrices && detail?.periodPrices?.length">仅显示当前时段，点击标题可展开全部</div>
       </div>
     </div>
 
     <!-- 底部操作栏 -->
-    <div class="volkswagen-bottom-actions">
-      <button class="volkswagen-btn nav-btn" @click="navigate">
-        <CustomIcon name="navigation" :size="18" color="#081c54" />
-        <span>导航</span>
-      </button>
-      <button class="volkswagen-btn primary-btn" @click="startCharging">
-        <CustomIcon name="charging-station" :size="18" color="#fff" />
-        <span>开始充电</span>
-      </button>
+    <div class="bottom-actions">
+      <van-button round type="primary" plain class="left-btn" @click="startCharging">开始充电</van-button>
+      <van-button round type="primary" class="right-btn" @click="navigate">导航前往</van-button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useStationStore } from '../stores/stationStore'
+import { stationAPI } from '../api/stationService'
 import { useBusinessStore } from '../stores/businessStore'
-import CustomIcon from '../components/CustomIcon.vue'
-// Vant 组件已在 main.js 中全局注册
 
 const route = useRoute()
 const router = useRouter()
-const stationStore = useStationStore()
 const businessStore = useBusinessStore()
 
-let station = ref(null)
+const loading = ref(true)
+const detail = ref(null)
+const errorMsg = ref('')
+const expandFast = ref(false)
+const expandSlow = ref(false)
+const expandPrices = ref(false)
 
-// 获取充电桩信息
-const fetchStationDetail = async () => {
-  const id = route.params.id
-  // 确保数据已加载
-  if (stationStore.stations.length === 0) {
-    await stationStore.fetchStations()
-  }
-  station.value = stationStore.getStationById(id)
-  
-  if (!station.value) {
-    router.replace('/')
-    return
-  }
-}
-
-// 返回上一页
-const goBack = () => {
-  router.back()
-}
-
-// 导航到充电桩
-const navigate = () => {
-  if (!station.value) return
-  
-  // 更新业务流程状态
-  businessStore.startNavigation(station.value.id)
-  
-  // 显示导航提示
-  import('vant').then(({ showToast }) => {
-    showToast({
-      message: `开始导航到 ${station.value.name}`,
-      type: 'success',
-      duration: 2000
-    })
-  })
-  
-  // 跳转到首页并规划路线
-  router.push({
-    path: '/',
-    query: { 
-      planRoute: station.value.id,
-      stationName: station.value.name
-    }
-  })
-}
-
-// 开始充电
-const startCharging = () => {
-  if (!station.value) return
-  
-  // 检查充电桩状态
-  if (station.value.status === '繁忙') {
-    import('vant').then(({ showToast }) => {
-      showToast({
-        message: '该充电桩当前繁忙，请选择其他充电桩',
-        type: 'fail',
-        duration: 3000
-      })
-    })
-    return
-  }
-  
-  // 更新业务流程状态
-  businessStore.startCharging(station.value)
-  
-  // 显示充电开始提示
-  import('vant').then(({ showToast }) => {
-    showToast({
-      message: `开始充电 - ${station.value.name}`,
-      type: 'success',
-      duration: 2000
-    })
-  })
-  
-  router.push(`/charge/${station.value.id}`)
-}
-
-// 获取状态样式
-const getStatusClass = (status) => {
-  switch (status) {
-    case '空闲': return 'status-free'
-    case '部分空闲': return 'status-partial'
-    case '繁忙': return 'status-busy'
-    default: return ''
-  }
-}
-
-// 生命周期
-onMounted(() => {
-  fetchStationDetail()
+// 仅显示当前时段；展开后显示全部
+const displayPeriodPrices = computed(() => {
+  if (!detail.value?.periodPrices?.length) return []
+  if (expandPrices.value) return detail.value.periodPrices
+  const now = new Date()
+  const current = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
+  // 找到 currentFlag 或者时间命中的时段；否则返回第一条
+  const list = detail.value.periodPrices
+  const currentItem = list.find(p => p.currentFlag) || list.find(p => current >= p.startTime && current < p.endTime) || list[0]
+  return [currentItem]
 })
+
+// 拉取详情（从 public/mock/stationDetail.json 中按 stationId 匹配）
+const fetchDetail = async () => {
+  try {
+    const id = String(route.params.id)
+    console.log('🔎 进入详情页, 路由ID:', id)
+    const res = await stationAPI.getStationDetail(id)
+    console.log('📦 详情接口返回:', res)
+    if (!res) {
+      errorMsg.value = '未找到该充电站详情'
+    }
+    detail.value = res
+  } catch (e) {
+    console.error('加载站点详情失败', e)
+    errorMsg.value = '加载详情失败，请稍后重试'
+  } finally {
+    loading.value = false
+  }
+}
+
+const goBack = () => router.back()
+
+const navigate = () => {
+  if (!detail.value) return
+  import('vant').then(({ showToast }) => showToast({ message: `开始导航到 ${detail.value.stationName}`, type: 'success' }))
+  router.push({ path: '/', query: { planRoute: detail.value.stationId, stationName: detail.value.stationName } })
+}
+
+const startCharging = () => {
+  if (!detail.value) return
+  import('vant').then(({ showToast }) => showToast({ message: '进入充电会话（模拟）', type: 'success' }))
+  router.push(`/charge/${detail.value.stationId}`)
+}
+
+const statusClass = (status) => {
+  switch (status) {
+    case '空闲':
+    case '可用':
+      return 'status-free'
+    case '占用':
+    case '忙碌':
+      return 'status-busy'
+    default:
+      return 'status-partial'
+  }
+}
+
+onMounted(fetchDetail)
 </script>
 
 <style scoped>
-/* 大众品牌风格详情页 */
-.volkswagen-detail-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  overflow: hidden;
-}
+.detail-container { background: #f5f7fa; min-height: 100vh; }
+.detail-header { position: sticky; top: 0; height: 48px; display: flex; align-items: center; padding: 0 12px; background: #fff; z-index: 10; border-bottom: 1px solid #eee; }
+.detail-header .back { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 18px; background: #f2f3f5; }
+.detail-header .title { flex: 1; text-align: center; font-weight: 600; color: #111; }
 
-/* 顶部导航栏 */
-.volkswagen-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(15px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  box-shadow: 0 1px 10px rgba(0, 0, 0, 0.03);
-  display: flex;
-  align-items: center;
-  padding: 0 20px;
-  z-index: 100;
-}
+.banner { background: #000; height: 200px; }
+.banner-swipe { height: 200px; }
+.banner-img { width: 100%; height: 200px; object-fit: cover; }
+.banner-placeholder { height: 200px; color: #999; display: flex; align-items: center; justify-content: center; background: #f2f3f5; }
 
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
+.content { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+.card { background: #fff; border-radius: 12px; padding: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
+.card-title { display: flex; align-items: center; justify-content: space-between; }
+.name { font-size: 18px; font-weight: 700; color: #111; }
+.meta { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.meta-item { display: flex; align-items: center; gap: 6px; color: #555; font-size: 14px; }
+.tel { color: #1989fa; text-decoration: none; }
+.fee { display: flex; align-items: center; gap: 6px; color: #666; margin-top: 8px; font-size: 13px; }
 
-.back-button {
-  width: 36px;
-  height: 36px;
-  background: rgba(8, 28, 84, 0.1);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
+.section-header { font-weight: 600; color: #111; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+.time-range { color: #888; font-size: 12px; }
 
-.back-button:hover {
-  background: rgba(8, 28, 84, 0.2);
-  transform: scale(1.05);
-}
+.connector-group { margin-top: 6px; }
+.group-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; cursor: pointer; }
+.group-meta { display: flex; align-items: center; gap: 8px; color: #999; }
+.badge { background: rgba(0,0,0,.06); color: #666; border-radius: 10px; padding: 2px 8px; font-size: 12px; }
+.group-title { color: #081c54; font-weight: 600; margin: 6px 0; }
+.connector-list { display: flex; flex-direction: column; gap: 8px; }
+.connector-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: 10px; background: #f7f8fa; }
+.c-left { display: flex; flex-direction: column; }
+.c-name { font-weight: 600; color: #111; }
+.c-sub { color: #888; font-size: 12px; margin-top: 2px; }
+.c-right { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+.c-right.status-free { background: rgba(52,199,89,.12); color: #34c759; }
+.c-right.status-partial { background: rgba(255,149,0,.12); color: #ff9500; }
+.c-right.status-busy { background: rgba(245,34,45,.12); color: #f5222d; }
 
-.logo {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
+.price-table { border: 1px solid #eee; border-radius: 10px; overflow: hidden; }
+.price-th, .price-tr { display: grid; grid-template-columns: 1fr 1fr; padding: 10px 12px; }
+.price-th { background: #f7f8fa; color: #666; font-size: 12px; }
+.price-tr { border-top: 1px solid #f0f0f0; }
+.price-header { cursor: pointer; }
+.price-toggle { display: flex; align-items: center; gap: 6px; color: #1989fa; }
+.toggle-text { font-size: 12px; }
+.collapse-hint { margin-top: 8px; color: #999; font-size: 12px; }
+.empty { color: #999; font-size: 13px; }
 
-.logo-text {
-  font-size: 18px;
-  font-weight: 700;
-  color: #081c54;
-  letter-spacing: 1px;
-  line-height: 1;
-}
-
-.logo-subtitle {
-  font-size: 10px;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-/* 主要内容区域 */
-.main-content {
-  padding: 80px 20px 100px;
-  max-width: 600px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-/* 充电桩卡片 */
-.volkswagen-station-card {
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 16px;
-  padding: 24px;
-  backdrop-filter: blur(5px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-}
-
-.volkswagen-station-card:hover {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(8, 28, 84, 0.3);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-}
-
-.station-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 12px;
-}
-
-.station-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: #081c54;
-  margin: 0;
-  line-height: 1.3;
-}
-
-.status-badge {
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 500;
-  text-align: center;
-  min-width: 60px;
-}
-
-.status-badge.status-free {
-  background: rgba(82, 196, 26, 0.1);
-  color: #52c41a;
-  border: 1px solid rgba(82, 196, 26, 0.3);
-}
-
-.status-badge.status-partial {
-  background: rgba(250, 173, 20, 0.1);
-  color: #faad14;
-  border: 1px solid rgba(250, 173, 20, 0.3);
-}
-
-.status-badge.status-busy {
-  background: rgba(245, 34, 45, 0.1);
-  color: #f5222d;
-  border: 1px solid rgba(245, 34, 45, 0.3);
-}
-
-.address {
-  font-size: 14px;
-  color: #666;
-  margin: 0 0 16px 0;
-  line-height: 1.5;
-}
-
-.station-basic-info {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.info-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: #666;
-}
-
-/* 通用区块样式 */
-.volkswagen-section {
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 16px;
-  padding: 24px;
-  backdrop-filter: blur(5px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-}
-
-.volkswagen-section:hover {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(8, 28, 84, 0.3);
-  transform: translateY(-1px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-}
-
-.section-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #081c54;
-  margin: 0 0 16px 0;
-  position: relative;
-  padding-left: 12px;
-}
-
-.section-title::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 4px;
-  height: 20px;
-  background: linear-gradient(135deg, #081c54, #1989fa);
-  border-radius: 2px;
-}
-
-/* 设备信息 */
-.device-info {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.device-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.device-item:last-child {
-  border-bottom: none;
-}
-
-.device-item .label {
-  font-size: 14px;
-  color: #666;
-  font-weight: 500;
-}
-
-.device-item .value {
-  font-size: 14px;
-  color: #333;
-  text-align: right;
-  font-weight: 500;
-}
-
-.volkswagen-chip {
-  background: rgba(8, 28, 84, 0.1);
-  color: #081c54;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 500;
-  margin-left: 8px;
-  border: 1px solid rgba(8, 28, 84, 0.2);
-}
-
-.status-text {
-  font-weight: 600;
-}
-
-.status-free { color: #52c41a; }
-.status-partial { color: #faad14; }
-.status-busy { color: #f5222d; }
-
-.price {
-  color: #ff6b6b;
-  font-weight: 600;
-  font-size: 16px;
-}
-
-/* 设施服务 */
-.features {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-}
-
-.feature-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  color: #333;
-  padding: 8px 0;
-}
-
-/* 底部操作栏 */
-.volkswagen-bottom-actions {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(15px);
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
-  gap: 12px;
-  z-index: 100;
-}
-
-.volkswagen-btn {
-  flex: 1;
-  height: 52px;
-  border-radius: 26px;
-  font-size: 16px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border: none;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.nav-btn {
-  background: rgba(8, 28, 84, 0.1);
-  color: #081c54;
-  border: 1px solid rgba(8, 28, 84, 0.2);
-}
-
-.nav-btn:hover {
-  background: rgba(8, 28, 84, 0.2);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(8, 28, 84, 0.2);
-}
-
-.primary-btn {
-  background: linear-gradient(135deg, #081c54, #1989fa);
-  color: #fff;
-  box-shadow: 0 4px 15px rgba(8, 28, 84, 0.3);
-}
-
-.primary-btn:hover {
-  background: linear-gradient(135deg, #0a2468, #1a7ce8);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(8, 28, 84, 0.4);
-}
-
-.primary-btn:active {
-  transform: translateY(0);
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .main-content {
-    padding: 80px 16px 100px;
-  }
-  
-  .volkswagen-station-card,
-  .volkswagen-section {
-    padding: 20px;
-  }
-  
-  .station-title {
-    font-size: 20px;
-  }
-  
-  .section-title {
-    font-size: 16px;
-  }
-  
-  .features {
-    grid-template-columns: 1fr;
-  }
-  
-  .volkswagen-bottom-actions {
-    padding: 16px;
-  }
-  
-  .volkswagen-btn {
-    height: 48px;
-    font-size: 15px;
-  }
-}
-
-@media (max-width: 480px) {
-  .volkswagen-header {
-    padding: 0 16px;
-  }
-  
-  .logo-text {
-    font-size: 16px;
-  }
-  
-  .main-content {
-    padding: 80px 12px 100px;
-  }
-  
-  .volkswagen-station-card,
-  .volkswagen-section {
-    padding: 16px;
-  }
-}
+.bottom-actions { position: sticky; bottom: 0; background: #fff; padding: 10px 12px 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.04); }
+.left-btn { border-color: #1989fa; color: #1989fa; }
+.right-btn { background: linear-gradient(135deg, #081c54, #1989fa); border: none; }
 </style>
