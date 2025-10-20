@@ -68,7 +68,6 @@ const initMap = () => {
   // 直接在window上定义初始化函数
   window.initAMap = () => {
     try {
-      console.log('🎯 高德地图SDK加载完成，开始创建地图实例')
       mapLoading.value = true
       mapError.value = null
       
@@ -83,14 +82,11 @@ const initMap = () => {
         throw new Error('地图容器未找到')
       }
       
-      console.log('📋 地图配置:', amapConfig.defaultMapOptions)
       
       // 创建地图实例 - 使用配置文件
       map = new window.AMap.Map('map', amapConfig.defaultMapOptions)
 
-      console.log('✅ 地图实例创建成功')
     } catch (error) {
-      console.error('💥 地图初始化失败:', error)
       mapError.value = '地图初始化失败: ' + error.message
       mapLoading.value = false
       return
@@ -113,7 +109,6 @@ const initMap = () => {
     // 3. 定位控件（使用高德地图定位服务）
     window.AMap.plugin('AMap.Geolocation', () => {
       geolocation = new window.AMap.Geolocation(amapConfig.geolocation)
-      console.log('高德地图定位服务加载完成')
     })
     //不美观、且用处不大删掉
     // 4. 鹰眼控件
@@ -139,12 +134,10 @@ const initMap = () => {
         autoFitView: true,
         policy: window.AMap.DrivingPolicy.LEAST_TIME
       })
-      console.log('驾车路线规划服务加载完成')
     })
 
     // 监听地图加载完成
     map.on('complete', () => {
-      console.log('地图加载完成')
       mapLoading.value = false
       renderMarkers()
       
@@ -155,13 +148,11 @@ const initMap = () => {
       
       // 自动执行定位（不显示toast提示）
       setTimeout(() => {
-        console.log('开始自动定位...')
         locateUser(false) // 传入false，不显示toast提示
       }, 1000) // 延迟1秒执行，确保地图完全加载
     })
     
     map.on('error', (error) => {
-      console.error('地图加载错误:', error)
       mapError.value = '地图加载错误'
       mapLoading.value = false
     })
@@ -175,8 +166,6 @@ const initMap = () => {
 
 // 渲染充电桩标记
 const renderMarkers = () => {
-  console.log('开始渲染充电桩标记，站点数量:', props.stations.length)
-  console.log('站点数据:', props.stations)
   
   // 清除现有标记
   if (markers.length > 0) {
@@ -186,7 +175,6 @@ const renderMarkers = () => {
 
   // 添加新标记
   props.stations.forEach((station, index) => {
-    console.log(`处理站点 ${index + 1}:`, station)
     // 根据状态选择不同的图标
     const statusColor = getStatusColor(station.openStatus)
     const marker = new window.AMap.Marker({
@@ -219,9 +207,7 @@ const renderMarkers = () => {
   // 将标记添加到地图
   if (markers.length > 0) {
     map.add(markers)
-    console.log('成功添加', markers.length, '个标记到地图')
   } else {
-    console.warn('没有标记被添加到地图')
   }
 }
 
@@ -282,11 +268,9 @@ const showInfoWindow = (station) => {
 
 // 规划路线到指定充电桩 - 增强版本（保留供Web预览使用）
 const planRouteToStation = (stationId) => {
-  console.log('🚗 开始规划路线，stationId:', stationId)
   
   // 1. 检查驾车服务
   if (!driving) {
-    console.warn('⚠️ 驾车路线规划服务未加载')
     showRouteError('路线规划服务未就绪，请稍后重试')
     return
   }
@@ -294,22 +278,16 @@ const planRouteToStation = (stationId) => {
   // 2. 获取充电桩信息
   const station = stationStore.getStationById(stationId)
   if (!station) {
-    console.warn('⚠️ 未找到指定的充电桩，stationId:', stationId)
     showRouteError('未找到充电桩信息')
     return
   }
 
   // 3. 检查用户位置
   if (!stationStore.userLocation) {
-    console.warn('⚠️ 用户位置未设置，无法规划路线')
     showRouteError('请先定位获取当前位置')
     return
   }
 
-  console.log('📍 路线规划参数:')
-  console.log('  - 起点:', stationStore.userLocation)
-  console.log('  - 终点:', { latitude: station.lat, longitude: station.lng })
-  console.log('  - 充电桩:', station.stationName)
   
   // 4. 清除之前的路线
   if (routePolyline.value) {
@@ -329,7 +307,6 @@ const planRouteToStation = (stationId) => {
 
   // 6. 设置超时机制
   const timeoutId = setTimeout(() => {
-    console.error('⏰ 路线规划超时')
     showRouteError('路线规划超时，请稍后重试')
   }, 15000) // 15秒超时
 
@@ -338,9 +315,6 @@ const planRouteToStation = (stationId) => {
     driving.search(startPoint, endPoint, (status, result) => {
       clearTimeout(timeoutId) // 清除超时定时器
       
-      console.log('🔄 路线规划回调:')
-      console.log('  - 状态:', status)
-      console.log('  - 结果:', result)
       
       if (status === 'complete') {
         handleRouteSuccess(result, station)
@@ -350,7 +324,6 @@ const planRouteToStation = (stationId) => {
     })
   } catch (error) {
     clearTimeout(timeoutId)
-    console.error('💥 路线规划调用异常:', error)
     showRouteError('路线规划服务异常: ' + error.message)
   }
 }
@@ -393,17 +366,9 @@ const openAmapNavigation = (stationId) => {
 
 // 处理路线规划成功
 const handleRouteSuccess = (result, station) => {
-  console.log('✅ 路线规划成功:', result)
-  console.log('📊 完整结果结构:', JSON.stringify(result, null, 2))
   
   if (result && result.routes && result.routes.length > 0) {
     const route = result.routes[0]
-    console.log('📊 路线详情:')
-    console.log('  - 距离:', route.distance, '米')
-    console.log('  - 时间:', route.time, '秒')
-    console.log('  - 路径点数:', route.path ? route.path.length : 0)
-    console.log('  - 路径类型:', typeof route.path)
-    console.log('  - 路径内容:', route.path)
     
     // 显示成功提示
     showRouteSuccess(route.distance, route.time)
@@ -414,58 +379,45 @@ const handleRouteSuccess = (result, station) => {
     // 方法1: 直接使用route.path
     if (route.path && Array.isArray(route.path) && route.path.length > 0) {
       pathData = route.path
-      console.log('✅ 使用route.path路径数据')
     }
     // 方法2: 使用route.steps中的路径
     else if (route.steps && Array.isArray(route.steps)) {
-      console.log('🔍 尝试从route.steps获取路径数据')
       const allPaths = []
       route.steps.forEach((step, index) => {
-        console.log(`步骤${index + 1}:`, step)
         if (step.path && Array.isArray(step.path)) {
           allPaths.push(...step.path)
         }
       })
       if (allPaths.length > 0) {
         pathData = allPaths
-        console.log('✅ 从route.steps获取路径数据，共', allPaths.length, '个点')
       }
     }
     // 方法3: 使用route.polyline
     else if (route.polyline) {
-      console.log('🔍 尝试解析route.polyline数据')
       try {
         // polyline可能是编码的字符串，需要解码
         if (typeof route.polyline === 'string') {
           // 这里可能需要使用高德地图的polyline解码方法
-          console.log('polyline字符串:', route.polyline)
         } else if (Array.isArray(route.polyline)) {
           pathData = route.polyline
-          console.log('✅ 使用route.polyline数组数据')
         }
       } catch (error) {
-        console.error('polyline解析失败:', error)
       }
     }
     
     // 绘制路线
     if (pathData && pathData.length > 0) {
-      console.log('🎨 开始绘制路线，路径点数:', pathData.length)
       drawRoute(pathData)
     } else {
-      console.warn('⚠️ 无法获取有效的路径数据')
-      console.warn('可用的路径字段:', Object.keys(route))
       showRouteError('无法获取路线路径数据')
     }
   } else {
-    console.warn('⚠️ 路线规划结果无效:', result)
     showRouteError('路线规划结果无效')
   }
 }
 
 // 处理路线规划失败
 const handleRouteError = (status, result) => {
-  console.error('❌ 路线规划失败:', status, result)
   
   let errorMessage = '路线规划失败'
   
@@ -485,11 +437,6 @@ const handleRouteError = (status, result) => {
       break
     case 'INVALID_USER_SCODE':
       errorMessage = '路线规划功能暂时不可用'
-      console.error('🔑 INVALID_USER_SCODE错误 - 安全密钥配置问题')
-      console.error('💡 解决方案:')
-      console.error('  1. 检查index.html中的安全密钥配置')
-      console.error('  2. 确认window._AMapSecurityConfig.securityJsCode已设置')
-      console.error('  3. 刷新页面重新加载配置')
       break
     default:
       errorMessage = `路线规划失败: ${status}`
@@ -500,10 +447,6 @@ const handleRouteError = (status, result) => {
 
 // 绘制路线
 const drawRoute = (path) => {
-  console.log('🎨 开始绘制路线...')
-  console.log('路径数据类型:', typeof path)
-  console.log('路径数据长度:', Array.isArray(path) ? path.length : '不是数组')
-  console.log('路径数据示例:', Array.isArray(path) ? path.slice(0, 3) : path)
   
   try {
     // 验证路径数据格式
@@ -523,18 +466,14 @@ const drawRoute = (path) => {
     
     // 检查是否有经纬度信息
     if (firstPoint.lng === undefined || firstPoint.lat === undefined) {
-      console.warn('⚠️ 路径点缺少经纬度信息，尝试其他格式')
-      console.log('第一个路径点:', firstPoint)
       
       // 尝试不同的坐标格式
       if (firstPoint.longitude !== undefined && firstPoint.latitude !== undefined) {
-        console.log('✅ 使用longitude/latitude格式')
         path = path.map(point => ({
           lng: point.longitude,
           lat: point.latitude
         }))
       } else if (Array.isArray(firstPoint) && firstPoint.length >= 2) {
-        console.log('✅ 使用数组格式 [lng, lat]')
         path = path.map(point => ({
           lng: point[0],
           lat: point[1]
@@ -544,7 +483,6 @@ const drawRoute = (path) => {
       }
     }
     
-    console.log('✅ 路径数据验证通过，开始创建Polyline')
     
     routePolyline.value = new window.AMap.Polyline({
       path: path,
@@ -557,14 +495,11 @@ const drawRoute = (path) => {
     })
     
     map.add(routePolyline.value)
-    console.log('✅ 路线已添加到地图')
     
     // 调整地图视野以显示完整路线
     map.setFitView([routePolyline.value])
-    console.log('✅ 地图视野已调整')
     
   } catch (error) {
-    console.error('💥 绘制路线失败:', error)
     showRouteError('绘制路线失败: ' + error.message)
   }
 }
@@ -623,7 +558,6 @@ const handleTouchEnd = () => {
 
 // 重新请求定位权限
 const requestLocationPermission = () => {
-  console.log('重新请求定位权限')
   import('vant').then(({ showToast }) => {
     showToast({
       message: '请手动在浏览器设置中开启定位权限，然后刷新页面',
@@ -640,11 +574,9 @@ const requestLocationPermission = () => {
 // 定位用户
 const locateUser = (showToast = true) => {
   if (!map) {
-    console.error('地图未初始化')
     return
   }
 
-  console.log('开始定位用户位置...')
   
   let toastInstance = null
   
@@ -662,7 +594,6 @@ const locateUser = (showToast = true) => {
   
   // 设置超时处理
   const timeoutId = setTimeout(() => {
-    console.log('定位超时')
     if (showToast && toastInstance) {
       import('vant').then(({ showToast }) => {
         showToast.clear()
@@ -687,12 +618,10 @@ const locateUser = (showToast = true) => {
   
   // 优先使用高德地图定位服务
   if (geolocation) {
-    console.log('使用高德地图定位服务')
     geolocation.getCurrentPosition((status, result) => {
       clearTimeout(timeoutId)
       
       if (status === 'complete') {
-        console.log('高德地图定位成功:', result)
         const { lng, lat } = result.position
         const userPosition = [lng, lat]
         
@@ -718,16 +647,13 @@ const locateUser = (showToast = true) => {
           })
         }
       } else {
-        console.error('高德地图定位失败:', result)
         clearToast()
         
         // 高德地图定位失败，尝试浏览器原生定位
-        console.log('高德地图定位失败，尝试浏览器原生定位')
         tryBrowserGeolocation(showToast, clearToast, timeoutId)
       }
     })
   } else {
-    console.log('高德地图定位服务未加载，使用浏览器原生定位')
     tryBrowserGeolocation(showToast, clearToast, timeoutId)
   }
 }
@@ -736,7 +662,6 @@ const locateUser = (showToast = true) => {
 const tryBrowserGeolocation = (showToast, clearToast, timeoutId) => {
   // 检查浏览器是否支持定位
   if (!navigator.geolocation) {
-    console.log('浏览器不支持定位')
     clearToast()
     if (showToast) {
       import('vant').then(({ showToast }) => {
@@ -751,13 +676,11 @@ const tryBrowserGeolocation = (showToast, clearToast, timeoutId) => {
   }
   
   // 使用浏览器原生定位API
-  console.log('使用浏览器原生定位API')
   navigator.geolocation.getCurrentPosition(
     (position) => {
       clearTimeout(timeoutId)
       const { latitude, longitude } = position.coords
       const userPosition = [longitude, latitude]
-      console.log('浏览器定位成功:', userPosition)
       
       // 创建用户位置标记
       createUserMarker(userPosition)
@@ -783,7 +706,6 @@ const tryBrowserGeolocation = (showToast, clearToast, timeoutId) => {
     },
     (error) => {
       clearTimeout(timeoutId)
-      console.error('浏览器定位失败:', error)
       
       let errorMessage = '定位失败'
       let showPermissionGuide = false
@@ -949,18 +871,12 @@ watch(() => props.selectedStationId, () => {
 // 生命周期
 onMounted(() => {
   nextTick(() => {
-    console.log('🚀 开始加载高德地图...')
-    console.log('🔑 API Key:', amapConfig.key)
-    console.log('🔐 安全密钥:', amapConfig.securityJsCode)
-    console.log('📦 版本:', amapConfig.version)
     
     // 将配置暴露到全局对象供调试使用
     window.amapConfig = amapConfig
-    console.log('✅ 配置已暴露到 window.amapConfig')
     
     // 检查是否已经加载过高德地图SDK
     if (window.AMap) {
-      console.log('✅ 高德地图SDK已存在，直接初始化')
       initMap()
       window.initAMap()
       return
@@ -974,24 +890,18 @@ onMounted(() => {
     // 直接使用高德地图CDN，安全密钥通过全局配置处理
     const scriptUrl = `https://webapi.amap.com/maps?v=${amapConfig.version}&key=${amapConfig.key}&callback=initAMap`
     script.src = scriptUrl
-    console.log('📡 加载脚本URL:', scriptUrl)
-    console.log('🔑 API密钥:', amapConfig.key)
-    console.log('🔐 安全密钥通过全局配置处理')
     
     // 添加超时机制
     const timeoutId = setTimeout(() => {
-      console.error('⏰ 高德地图SDK加载超时（10秒）')
       mapError.value = 'SDK加载超时，请检查网络连接'
       mapLoading.value = false
     }, 10000)
     
     script.onload = () => {
-      console.log('✅ 高德地图SDK脚本加载成功')
       clearTimeout(timeoutId)
     }
     
     script.onerror = (error) => {
-      console.error('❌ 高德地图SDK加载失败:', error)
       clearTimeout(timeoutId)
       mapError.value = 'SDK加载失败，请检查网络连接和API密钥'
       mapLoading.value = false
@@ -1038,10 +948,8 @@ const reloadMap = () => {
       // 直接使用高德地图CDN，安全密钥通过全局配置处理
       const scriptUrl = `https://webapi.amap.com/maps?v=${amapConfig.version}&key=${amapConfig.key}&callback=initAMap`
       script.src = scriptUrl
-      console.log('🔄 重新加载脚本URL:', scriptUrl)
       
       script.onerror = () => {
-        console.error('高德地图SDK加载失败')
         mapError.value = 'SDK加载失败，请检查网络连接'
         mapLoading.value = false
       }
@@ -1051,7 +959,6 @@ const reloadMap = () => {
 
 // 跳转到充电桩详情页
 const goToStationDetail = (stationId) => {
-  console.log('🔗 跳转到充电桩详情页:', stationId)
   router.push(`/station/${stationId}`)
 }
 
@@ -1067,16 +974,11 @@ window.goToStationDetail = goToStationDetail
 window.closeInfoWindow = closeInfoWindow
 
 // 调试信息
-console.log('🔧 全局函数已设置:', {
-  goToStationDetail: typeof window.goToStationDetail,
-  closeInfoWindow: typeof window.closeInfoWindow
-})
 
 // 飞行到指定站点
 const flyToStation = (station) => {
   if (!map || !station) return
   
-  console.log('飞行到站点:', station.stationName)
   
   // 飞行到站点位置
   map.setZoomAndCenter(16, [station.lng, station.lat])

@@ -159,15 +159,12 @@ const displayPeriodPrices = computed(() => {
 const fetchDetail = async () => {
   try {
     const id = String(route.params.id)
-    console.log('🔎 进入详情页, 路由ID:', id)
     const res = await stationAPI.getStationDetail(id)
-    console.log('📦 详情接口返回:', res)
     if (!res) {
       errorMsg.value = '未找到该充电站详情'
     }
     detail.value = res
   } catch (e) {
-    console.error('加载站点详情失败', e)
     errorMsg.value = '加载详情失败，请稍后重试'
   } finally {
     loading.value = false

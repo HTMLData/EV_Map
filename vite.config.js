@@ -30,14 +30,14 @@ export default defineConfig({
             cert: fs.readFileSync(certPath)
           }
         } else {
-          console.warn('⚠️  SSL 证书文件不存在，使用 HTTP 模式')
-          console.warn('💡 请运行以下命令生成证书:')
+          console.warn('SSL 证书文件不存在，使用 HTTP 模式')
+          console.warn('请运行以下命令生成证书:')
           console.warn('   Windows: generate-certs.bat')
           console.warn('   macOS/Linux: ./generate-certs.sh')
           return false
         }
       } catch (error) {
-        console.warn('⚠️  SSL 证书加载失败，使用 HTTP 模式:', error.message)
+        console.warn('SSL 证书加载失败，使用 HTTP 模式:', error.message)
         return false
       }
     })(),

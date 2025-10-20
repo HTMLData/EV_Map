@@ -1,3 +1,5 @@
+// 充电桩数据服务
+// 提供充电桩列表、详情、充电会话、支付等API接口
 import axios from 'axios'
 
 // API 基础配置
@@ -64,7 +66,6 @@ export const stationAPI = {
   // 获取充电桩列表
   async getStations(params = {}) {
     try {
-      console.log('🔍 尝试调用真实API...')
       // 优先使用真实API，失败时回退到mock数据
       const response = await apiClient.get('/stations', { params })
       
@@ -73,13 +74,9 @@ export const stationAPI = {
         throw new Error('API返回HTML页面，说明API不存在')
       }
       
-      console.log('✅ 真实API调用成功:', response)
       return response
     } catch (error) {
-      console.warn('⚠️ 真实API不可用，使用mock数据:', error.message)
-      console.log('📡 开始调用Mock API...')
       const response = await mockClient.get('/stationList.json')
-      console.log('📦 Mock API响应:', response)
       return response
     }
   },
@@ -93,7 +90,6 @@ export const stationAPI = {
       }
       return response
     } catch (error) {
-      console.warn('真实API不可用，使用mock数据:', error.message)
       // 从mock数据中查找对应ID的充电桩
       const response = await mockClient.get(`/stationDetail.json?t=${Date.now()}`)
       const station = response.stationDetails.find(s => String(s.stationId) === String(stationId))
@@ -112,7 +108,6 @@ export const stationAPI = {
       })
       return response
     } catch (error) {
-      console.warn('真实API不可用，使用mock数据:', error.message)
       const response = await mockClient.get('/stationList.json')
       let results = response.stationList || []
       
@@ -163,7 +158,6 @@ export const stationAPI = {
       })
       return response
     } catch (error) {
-      console.warn('真实API不可用，使用mock数据:', error.message)
       const response = await mockClient.get('/stationList.json')
       let stations = response.stationList || []
       
@@ -227,7 +221,6 @@ export const userAPI = {
       const response = await apiClient.post('/user/preferences', preferences)
       return response
     } catch (error) {
-      console.warn('保存用户偏好失败:', error.message)
       // 保存到本地存储
       localStorage.setItem('user_preferences', JSON.stringify(preferences))
       return preferences
@@ -240,7 +233,6 @@ export const userAPI = {
       const response = await apiClient.get('/user/preferences')
       return response
     } catch (error) {
-      console.warn('获取用户偏好失败，使用本地存储:', error.message)
       const preferences = localStorage.getItem('user_preferences')
       return preferences ? JSON.parse(preferences) : {}
     }
@@ -260,7 +252,6 @@ export const chargeAPI = {
       })
       return response
     } catch (error) {
-      console.warn('真实API不可用，模拟充电开始:', error.message)
       return {
         sessionId: Date.now(),
         stationId,
@@ -280,7 +271,6 @@ export const chargeAPI = {
       })
       return response
     } catch (error) {
-      console.warn('真实API不可用，模拟充电结束:', error.message)
       return {
         sessionId,
         endTime: new Date().toISOString(),
@@ -296,7 +286,6 @@ export const chargeAPI = {
       const response = await apiClient.get(`/charge/${sessionId}/status`)
       return response
     } catch (error) {
-      console.warn('真实API不可用，模拟充电状态:', error.message)
       return {
         sessionId,
         status: 'charging',
@@ -320,7 +309,6 @@ export const paymentAPI = {
       })
       return response
     } catch (error) {
-      console.warn('真实API不可用，模拟支付订单创建:', error.message)
       return {
         orderId: Date.now(),
         sessionId: chargeSession.sessionId,
@@ -340,7 +328,6 @@ export const paymentAPI = {
       })
       return response
     } catch (error) {
-      console.warn('真实API不可用，模拟支付处理:', error.message)
       return {
         orderId,
         status: 'success',
@@ -363,7 +350,6 @@ export const navigationAPI = {
       })
       return response
     } catch (error) {
-      console.warn('真实API不可用，使用高德地图API:', error.message)
       // 这里可以集成高德地图的路线规划API
       return {
         distance: Math.random() * 20 + 1,
@@ -391,11 +377,9 @@ export const utils = {
         // 转换为公里
         return distance / 1000
       } catch (error) {
-        console.warn('高德地图距离计算失败，使用备用方法:', error)
         return this.calculateDistanceHaversine(lat1, lon1, lat2, lon2)
       }
     } else {
-      console.warn('高德地图API未加载，使用备用距离计算方法')
       return this.calculateDistanceHaversine(lat1, lon1, lat2, lon2)
     }
   },
@@ -403,7 +387,6 @@ export const utils = {
   // 使用高德地图API计算多个点到用户位置的距离
   calculateDistancesToUser(userLat, userLon, stations) {
     if (!userLat || !userLon) {
-      console.warn('用户位置信息不完整')
       return stations
     }
 

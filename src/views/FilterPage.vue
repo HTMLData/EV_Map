@@ -207,7 +207,6 @@ onMounted(async () => {
   if (stationStore.stations.length === 0) {
     await stationStore.fetchStations()
   }
-  console.log('筛选页面充电桩数据:', stationStore.stations.length)
 })
 </script>
 

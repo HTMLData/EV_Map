@@ -1,3 +1,5 @@
+// 充电桩状态管理
+// 管理充电桩数据、用户位置、筛选选项等全局状态
 import { defineStore } from 'pinia'
 import { stationAPI, utils } from '../api/stationService'
 
@@ -18,10 +20,6 @@ export const useStationStore = defineStore('station', {
 
   getters: {
     filteredStations: (state) => {
-      console.log('filteredStations getter被调用:', {
-        stations: state.stations.length,
-        filterOptions: state.filterOptions
-      })
       let result = [...state.stations]
 
       // 按充电类型筛选
@@ -54,7 +52,6 @@ export const useStationStore = defineStore('station', {
         result.sort((a, b) => (a.totalCostPrice || 0) - (b.totalCostPrice || 0))
       }
 
-      console.log('filteredStations结果:', result.length)
       return result
     },
 
@@ -68,13 +65,9 @@ export const useStationStore = defineStore('station', {
       this.loading = true
       this.error = null
       try {
-        console.log('🚀 开始加载充电桩数据...')
         // 使用新的API服务
         const response = await stationAPI.getStations()
-        console.log('📡 API响应:', response)
         this.stations = response.stationList || []
-        console.log('✅ 充电桩数据加载成功:', this.stations.length, '个充电桩')
-        console.log('📋 第一个充电桩:', this.stations[0])
         
         // 如果用户位置已设置，重新计算距离
         if (this.userLocation) {
@@ -82,7 +75,6 @@ export const useStationStore = defineStore('station', {
         }
       } catch (error) {
         this.error = '加载充电桩数据失败'
-        console.error('❌ Failed to fetch stations:', error)
       } finally {
         this.loading = false
       }
@@ -91,7 +83,6 @@ export const useStationStore = defineStore('station', {
     // 设置用户位置并更新所有充电桩的距离
     setUserLocation(latitude, longitude) {
       this.userLocation = { latitude, longitude }
-      console.log('用户位置已设置:', latitude, longitude)
       
       // 更新所有充电桩的距离
       this.updateDistances()
@@ -100,7 +91,6 @@ export const useStationStore = defineStore('station', {
     // 更新所有充电桩到用户的距离（只在定位时计算一次）
     updateDistances() {
       if (!this.userLocation) {
-        console.warn('用户位置未设置，无法计算距离')
         return
       }
 
@@ -112,10 +102,7 @@ export const useStationStore = defineStore('station', {
           this.stations
         )
         
-        console.log('距离计算完成，已更新所有充电桩距离')
-        console.log('充电桩距离示例:', this.stations.slice(0, 3).map(s => `${s.stationName}: ${s.distance}km`))
       } catch (error) {
-        console.error('距离计算失败:', error)
       }
     },
 
@@ -133,7 +120,6 @@ export const useStationStore = defineStore('station', {
           station.lng
         )
       } catch (error) {
-        console.error('单个距离计算失败:', error)
         return station.distance || 0
       }
     },

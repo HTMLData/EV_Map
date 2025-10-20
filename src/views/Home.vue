@@ -310,11 +310,6 @@ const distanceOptions = [
 // 计算搜索结果
 const searchResults = computed(() => {
   let results = stationStore.filteredStations
-  console.log('searchResults计算:', {
-    filteredStations: stationStore.filteredStations.length,
-    searchQuery: searchQuery.value,
-    results: results.length
-  })
   
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
@@ -360,13 +355,9 @@ const sortedStations = computed(() => {
 })
 
 // 监控数据变化
-watch(() => stationStore.stations, (newVal) => {
-  console.log('🔔 stationStore.stations变化:', newVal.length)
-}, { deep: true })
+watch(() => stationStore.stations, () => {}, { deep: true })
 
-watch(() => searchResults.value, (newVal) => {
-  console.log('🔔 searchResults变化:', newVal.length)
-}, { deep: true })
+watch(() => searchResults.value, () => {}, { deep: true })
 
 // 方法
 const handleStationSelect = (station) => {
@@ -381,9 +372,7 @@ const selectStation = (station) => {
   businessStore.selectStation(station)
 }
 
-const handleSearch = () => {
-  console.log('搜索:', searchQuery.value)
-}
+const handleSearch = () => {}
 
 const handleClearSearch = () => {
   searchQuery.value = ''
@@ -585,20 +574,16 @@ const handleCardTouchEnd = (event) => {
   if (Math.abs(cardDragOffset.value) > threshold) {
     if (cardCollapsed.value && cardDragOffset.value > threshold) {
       // 从收起状态向上拖拽超过阈值，展开
-      console.log('📈 展开卡片')
       expandCard()
     } else if (!cardCollapsed.value && cardDragOffset.value < -threshold) {
       // 从展开状态向下拖拽超过阈值，收起
-      console.log('📉 收起卡片')
       collapseCard()
     } else {
       // 拖拽距离不够，回弹到原状态
-      console.log('🔄 回弹到原状态')
       resetCardPosition()
     }
   } else {
     // 拖拽距离不够，回弹到原状态
-    console.log('🔄 拖拽距离不够，回弹')
     resetCardPosition()
   }
   
@@ -721,21 +706,17 @@ const openStationFromList = (station) => {
 
 const handleSortChange = (value) => {
   sortType.value = value
-  console.log('排序方式改变:', value)
 }
 
 const handleDistanceFilter = (value) => {
   distanceFilter.value = value
-  console.log('距离筛选改变:', value)
 }
 
 const sendToCar = (station) => {
-  console.log('发送到车:', station.stationName)
   // 实现发送到车的逻辑
 }
 
 const navigateToStation = (station) => {
-  console.log('导航到站点:', station.stationName)
   if (mapRef.value && mapRef.value.openAmapNavigation) {
     mapRef.value.openAmapNavigation(station.stationId)
   }
@@ -747,7 +728,6 @@ const goToStationDetail = (stationId) => {
 
 const planRouteToStation = (stationId) => {
   // 规划路线逻辑
-  console.log('规划路线到站点:', stationId)
 }
 
 const goToFilterPage = () => {
@@ -804,9 +784,7 @@ onMounted(async () => {
   // 初始化业务流程
   businessStore.startFindFlow()
   
-  console.log('🔄 开始调用fetchStations...')
   await stationStore.fetchStations()
-  console.log('✅ fetchStations完成，当前stations数量:', stationStore.stations.length)
   
   // 检查是否需要规划路线
   await handleRoutePlanning()
@@ -820,12 +798,8 @@ onMounted(async () => {
   }
   
   // 调试信息：显示距离计算状态
-  console.log('📊 充电桩数据加载完成，共', stationStore.stations.length, '个充电桩')
   if (stationStore.userLocation) {
-    console.log('用户位置:', stationStore.userLocation)
-    console.log('已计算距离的充电桩:', stationStore.stations.filter(s => s.distance !== undefined).length)
   } else {
-    console.log('用户位置未设置，距离将在定位成功后动态计算')
   }
 })
 
@@ -836,7 +810,6 @@ const handleRoutePlanning = async () => {
     const planRouteId = route?.query?.planRoute
     
     if (planRouteId) {
-      console.log('需要规划路线到站点:', planRouteId)
       const station = stationStore.getStationById(planRouteId)
       if (station) {
         await nextTick()
@@ -846,7 +819,6 @@ const handleRoutePlanning = async () => {
       }
     }
   } catch (error) {
-    console.error('路线规划处理失败:', error)
   }
 }
 </script>

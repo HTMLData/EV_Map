@@ -9,7 +9,7 @@ import readline from 'readline';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-console.log('🔐 正在生成自签名 SSL 证书...');
+console.log('正在生成自签名 SSL 证书...');
 
 // 创建证书目录
 const certsDir = path.join(__dirname, '..', 'certs');
@@ -22,7 +22,7 @@ const certPath = path.join(certsDir, 'localhost.pem');
 
 // 检查证书是否已存在
 if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
-  console.log('⚠️  证书已存在，是否重新生成？(y/N)');
+  console.log('证书已存在，是否重新生成？(y/N)');
   
   // 在 Node.js 中读取用户输入
   const rl = readline.createInterface({
@@ -34,7 +34,7 @@ if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
     if (answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes') {
       generateCertificates();
     } else {
-      console.log('✅ 使用现有证书');
+      console.log('使用现有证书');
     }
     rl.close();
   });
@@ -44,13 +44,13 @@ if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
 
 function generateCertificates() {
   try {
-    console.log('📝 生成私钥...');
+    console.log('生成私钥...');
     execSync(`openssl genrsa -out "${keyPath}" 2048`, { stdio: 'inherit' });
 
-    console.log('📝 生成证书签名请求...');
+    console.log('生成证书签名请求...');
     execSync(`openssl req -new -key "${keyPath}" -out "${path.join(certsDir, 'localhost.csr')}" -subj "/C=CN/ST=Beijing/L=Beijing/O=Volkswagen/OU=IT/CN=localhost"`, { stdio: 'inherit' });
 
-    console.log('📝 生成自签名证书...');
+    console.log('生成自签名证书...');
     execSync(`openssl x509 -req -in "${path.join(certsDir, 'localhost.csr')}" -signkey "${keyPath}" -out "${certPath}" -days 365`, { stdio: 'inherit' });
 
     // 清理临时文件

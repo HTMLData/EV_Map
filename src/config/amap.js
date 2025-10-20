@@ -1,4 +1,5 @@
 // 高德地图配置
+// 包含API密钥、安全密钥、地图选项、控件配置等
 export const amapConfig = {
   // 高德地图API Key - 请替换为您的实际API Key
   // 备用密钥列表，如果主密钥失败会自动尝试
